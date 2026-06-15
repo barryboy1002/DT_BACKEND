@@ -32,11 +32,11 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE TRIGGER  trg_prevent_update_stock_movements
-BEFORE UPDATE ON stock_movement
+BEFORE UPDATE ON stock_movements
 FOR EACH ROW
 EXECUTE FUNCTION prevent_stock_modification();
 
 CREATE TRIGGER trg_prevent_delete_stock_movements
-BEFORE DELETE ON stock_movement
+BEFORE DELETE ON stock_movements
 FOR EACH ROW
 EXECUTE FUNCTION prevent_stock_modifications();

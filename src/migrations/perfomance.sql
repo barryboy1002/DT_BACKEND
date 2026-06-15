@@ -1,0 +1,2 @@
+CREATE INDEX idx_stock_movements_product_id
+ON stock_movements(product_id);
