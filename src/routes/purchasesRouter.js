@@ -1,5 +1,5 @@
-import {Router } from express;
+import { Router } from 'express';
 
 const purchasesRouter = Router();
 
-export {purchasesRouter}
+export { purchasesRouter };

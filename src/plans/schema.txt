@@ -83,9 +83,15 @@ CREATE TABLE purchases(
 	date_ordered TIMESTAMP DEFAULT NOW(),
 	date_arrived TIMESTAMP
 );
+CREATE TABLE purchase_items(
+	purchase_item_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	purchase_id INT NOT NULL REFERENCES purchases(purchase_id) ON DELETE CASCADE,
+	product_id INT NOT NULL REFERENCES products(product_id),
+	quantity DECIMAL(10,2) NOT NULL CHECK(quantity > 0),
+	unit_price DECIMAL(10,2) NOT NULL CHECK(unit_price >= 0) 
+);
 
 
-//triggers in SQL
 
 CREATE OR REPLACE FUNCTION  record_sale()
 RETURN TRIGGER AS $$
@@ -105,15 +111,59 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
 CREATE TRIGGER trg_record_sale
 AFTER INSERT ON sale_items
 FOR EACH ROW
 EXECUTE FUNCTION record_sales();
 
-CREATE TABLE purchase_items(
-	purchase_item_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	purchase_id INT NOT NULL REFERENCES purchases(purchase_id) ON DELETE CASCADE,
-	product_id INT NOT NULL REFERENCES products(product_id),
-	quantity DECIMAL(10,2) NOT NULL CHECK(quantity > 0),
-	unit_price DECIMAL(10,2) NOT NULL CHECK(unit_price >= 0) 
-);
+CREATE OR REPLACE FUNCTION record_purchases()
+RETURNS TRIGGER AS $$
+BEGIN
+	INSERT INTO stock_movements(
+		product_id,
+		cause,
+		quantity,
+		note
+	)
+	VALUES(
+		NEW.product_id,
+		'purchase',
+		NEW.quantity,
+		'Generated from purchase_items'
+	);
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_record_purchase
+AFTER INSERT ON purchase_items
+FOR EACH ROW
+EXECUTE FUNCTION record_purchases();
+
+
+CREATE OR REPLACE FUNCTION prevent_negative_stock()
+RETURNs TRIGGER AS $$
+DECLARE
+	current_stock DECIMAL(10,2)
+BEGIN
+	SELECT COALESCE(SUM(quantity),0)
+	INTO current_stock
+	FROM stock_movements
+	WHERE product_id = NEW.product_id;
+	
+	IF current_stock + NEW.quantity < 0 THEN
+		RAISE EXCEPTION 'Insufficient  stock for product %', NEW.product_id;
+	END IF;
+	
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER	trg_prevent_negative_stock
+BEFORE INSERT ON stock_movements
+FOR EACH ROW
+WHEN (NEW.quantity < 0)
+EXECUTE FUNCTION prevent_negative_stock();
+	
+		

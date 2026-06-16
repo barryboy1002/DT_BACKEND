@@ -1,5 +1,5 @@
-import {Router } from express;
+import { Router } from 'express';
 
 const stocksRouter = Router();
 
-export {stocksRouter}
+export { stocksRouter };
