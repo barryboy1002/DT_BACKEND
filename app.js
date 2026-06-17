@@ -5,6 +5,7 @@ import { productsRouter } from "./src/routes/productRouter.js";
 import { stocksRouter } from "./src/routes/stockRouter.js"; 
 import { purchasesRouter } from "./src/routes/purchasesRouter.js";
 import { suppliersRouter } from "./src/routes/suppliersRouter.js";
+import { categoriesRouter } from "./src/routes/categoriesRouter.js";
 import { errHandler } from "./src/errors/error.js";
 
 const app = express();
@@ -17,6 +18,7 @@ app.use("/products", productsRouter);
 app.use("/stock", stocksRouter);
 app.use("/purchases", purchasesRouter );
 app.use("/suppliers", suppliersRouter);
+app.use("/categories", categoriesRouter);
 
 
 app.use(errHandler);

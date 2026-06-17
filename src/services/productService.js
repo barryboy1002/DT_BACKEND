@@ -164,3 +164,4 @@ async function deleteProductsService(businessId, ids) {
 }
 
 export { createProductService, getProductsService, getProductService, updateProductService, deleteProductsService }
+// figure out how to implement search later
