@@ -57,6 +57,7 @@ CREATE TABLE stock_movements(
 CREATE TYPE pay_type AS ENUM ('cash', 'mpesa','credit');
 CREATE TABLE sales(
 	sale_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	business_id UUID NOT NULL REFERENCES businesses(business_id)
 	customer_name VARCHAR(150),
 	payment_method pay_type NOT NULL,
 	date_time TIMESTAMP DEFAULT NOW()
