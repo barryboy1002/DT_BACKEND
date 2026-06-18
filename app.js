@@ -20,6 +20,9 @@ app.use("/purchases", purchasesRouter );
 app.use("/suppliers", suppliersRouter);
 app.use("/categories", categoriesRouter);
 
+// purchases endpoints
+app.use("/purchases", purchasesRouter);
+
 
 app.use(errHandler);
 
