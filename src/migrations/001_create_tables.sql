@@ -61,6 +61,8 @@ CREATE TABLE sales(
 	business_id UUID NOT NULL REFERENCES businesses(business_id)
 	customer_name VARCHAR(150),
 	payment_method pay_type NOT NULL,
+	receipt_number varchar(50) NOT NULL UNIQUE,
+	receipt_url text,
 	date_time TIMESTAMP DEFAULT NOW()
 );
 CREATE TABLE sale_items(
@@ -75,6 +77,7 @@ CREATE TABLE suppliers(
 	business_id uuid NOT NULL REFERENCES businesses (business_id),	
 	name VARCHAR(200) NOT NULL,
 	phone VARCHAR(20) NOT NULL,
+	email VARCHAR (150) NOT NULL,
 	payment_terms VARCHAR(100),
 	created_at TIMESTAMP DEFAULT NOW()
 );

@@ -3,10 +3,12 @@ import { query, getClient } from "../db/index.js";
 async function createSaleService(businessId, items, paymentMethod, customerName = null) {
     const client = await getClient();
     try {
-        const saleQueryText = "INSERT INTO sales(business_id,customer_name,payment_method) VALUES ($1, $2, $3) RETURNING sale_id";
+        const receiptNumber = `RCP-${Date.now().toString().slice(-8)}`;
+        const saleQueryText = "INSERT INTO sales(business_id,customer_name,payment_method,receipt_number) VALUES ($1, $2, $3, $4) RETURNING sale_id, receipt_number";
         await client.query('BEGIN');
-        const saleResult = await client.query(saleQueryText, [businessId, customerName, paymentMethod]);
+        const saleResult = await client.query(saleQueryText, [businessId, customerName, paymentMethod, receiptNumber]);
         const saleId = saleResult.rows[0].sale_id;
+        const savedReceipt = saleResult.rows[0].receipt_number;
 
         // Build bulk insert for sale_items
         const values = [];
@@ -22,7 +24,7 @@ async function createSaleService(businessId, items, paymentMethod, customerName 
 
 
         await client.query('COMMIT');
-        return { sale_id: saleId, items: result.rows };
+        return { sale_id: saleId, receipt_number: savedReceipt, items: result.rows };
     } catch (error) {
         await client.query('ROLLBACK');
         throw error;

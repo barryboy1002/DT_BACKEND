@@ -6,6 +6,7 @@ import { stocksRouter } from "./src/routes/stockRouter.js";
 import { purchasesRouter } from "./src/routes/purchasesRouter.js";
 import { suppliersRouter } from "./src/routes/suppliersRouter.js";
 import { categoriesRouter } from "./src/routes/categoriesRouter.js";
+import { reportsRouter } from "./src/routes/reportsRouter.js";
 import { errHandler } from "./src/errors/error.js";
 
 const app = express();
@@ -22,6 +23,9 @@ app.use("/categories", categoriesRouter);
 
 // purchases endpoints
 app.use("/purchases", purchasesRouter);
+
+// reports
+app.use('/reports', reportsRouter);
 
 
 app.use(errHandler);
