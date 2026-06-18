@@ -26,6 +26,7 @@ CREATE TABLE products(
 	selling_price DECIMAL(10,2) NOT NULL CHECK(selling_price >= 0),
 	brand VARCHAR(100),
 	unit VARCHAR(50),
+	low_stock_threshhold DECIMAL(10,2) NOT NULL CHECK(low_stock_threshhold >= 0),
 	description TEXT,
 	created_at TIMESTAMP DEFAULT NOW()
 );

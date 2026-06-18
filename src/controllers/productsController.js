@@ -18,8 +18,9 @@ async function createProductController(req, res, next) {
 
 async function getProductsController(req, res, next){
     const businessId = req.user?.businessId || req.params?.businessId;
+    const {limit, offset} = req.query;
     try {
-        const products = await getProductsService(businessId);
+        const products = await getProductsService(businessId,{limit, offset});
         res.status(200).json(products);
 
     }catch(error){

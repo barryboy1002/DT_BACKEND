@@ -20,8 +20,6 @@ async function createSaleService(businessId, items, paymentMethod, customerName 
         const saleItemsQuery = `INSERT INTO sale_items(sale_id, product_id, quantity, unit_price) VALUES ${values.join(', ')} RETURNING *`;
         const result = await client.query(saleItemsQuery, params);
 
-        // Optionally insert stock_movements (negative quantity for sales)
-        // For simplicity this implementation does not add stock movements yet.
 
         await client.query('COMMIT');
         return { sale_id: saleId, items: result.rows };

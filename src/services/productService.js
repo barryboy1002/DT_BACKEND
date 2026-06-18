@@ -49,8 +49,7 @@ async function createProductService(businessId, data) {
     } finally {
         client.release();
     }
-}
-//need to support pagination and figure out how to get 
+} 
 async function getProductsService(businessId, options = {}){
     try{
         const limit = Number(options.limit) || 100;
@@ -58,14 +57,14 @@ async function getProductsService(businessId, options = {}){
 
         const queryText = `
             WITH page AS (
-                SELECT product_id, name, category_id, buying_price, selling_price
+                SELECT product_id, name, category_id, buying_price, selling_price,low_stock_threshhold
                 FROM products
                 WHERE business_id = $1
                 ORDER BY name
                 LIMIT $2 OFFSET $3
             )
-            SELECT p.product_id, p.name, p.category_id, p.buying_price, p.selling_price,
-                   COALESCE(s.quantity, 0) AS stock_quantity
+                 SELECT p.product_id, p.name, p.category_id, p.buying_price, p.selling_price, p.low_stock_threshhold,
+                     COALESCE(s.quantity, 0) AS stock_quantity
             FROM page p
             LEFT JOIN stock s ON p.product_id = s.product_id
         `;
