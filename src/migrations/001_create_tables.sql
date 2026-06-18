@@ -82,6 +82,7 @@ CREATE TABLE suppliers(
 CREATE TABLE purchases(
 	purchases_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	supplier_id uuid NOT NULL REFERENCES suppliers(supplier_id),
+	business_id uuid NOT NULL REFERENCES businesses(business_id)
 	payment_method pay_type NOT NULL,
 	date_ordered TIMESTAMP DEFAULT NOW(),
 	date_arrived TIMESTAMP
