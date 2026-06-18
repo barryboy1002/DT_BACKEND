@@ -32,7 +32,7 @@ async function listPurchasesService(businessId, options = {}){
 }
 
 async function getPurchaseService(purchaseId, businessId){
-  const q = `SELECT p.purchases_id, p.supplier_id, s.name as supplier_name, s.contact as supplier_contact, p.payment_method, p.date_ordered, p.date_arrived FROM purchases p LEFT JOIN suppliers s ON s.supplier_id = p.supplier_id WHERE p.purchases_id = $1 AND p.business_id = $2`;
+  const q = `SELECT p.purchases_id, p.supplier_id, s.name as supplier_name, s.phone as supplier_contact, p.payment_method, p.date_ordered, p.date_arrived FROM purchases p LEFT JOIN suppliers s ON s.supplier_id = p.supplier_id WHERE p.purchases_id = $1 AND p.business_id = $2`;
   const r = await query(q, [purchaseId, businessId]);
   if (!r || r.rowCount === 0){ const err = new Error('Purchase not found'); err.status = 404; throw err; }
   const purchase = r.rows[0];
