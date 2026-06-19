@@ -1,4 +1,4 @@
-import {getStockMovementsService, getLowStockService,getOutOfStockService} from "../services/stocksServices.js" 
+import {getStockMovementsService, getLowStockService,getOutOfStockService} from "../services/stocksService.js" 
 
 
 

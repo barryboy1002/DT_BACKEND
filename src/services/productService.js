@@ -1,4 +1,6 @@
 import { query,getClient } from "../db/index.js";
+import { AppError } from "../errors/AppError.js";
+import {NotFoundError} from "../errors/NotFoundError.js";
 
 async function createProductService(businessId, data) {
     const client = await getClient();
@@ -16,6 +18,10 @@ async function createProductService(businessId, data) {
             description = null,
         } = data;
 
+        if (!name || buying_price == null || selling_price == null) {
+            throw new AppError("Missing required product fields", 400);
+        }
+
         const queryText = `INSERT INTO products
             (business_id, category_id, name, barcode, buying_price, selling_price, brand, unit, description)
             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
@@ -32,17 +38,16 @@ async function createProductService(businessId, data) {
             unit,
             description,
         ];
+        
 
         const res = await client.query(queryText, params);
 
-        if (res.rowCount === 1) {
-            const created = res.rows[0];
-            await client.query('COMMIT');
-            return created;
+        if (res.rowCount !== 1) {
+            throw new AppError("Failed to create product", 500);
         }
 
         await client.query('COMMIT');
-        return null;
+        return res.rows[0];
     } catch (e) {
         await client.query('ROLLBACK');
         throw e;
@@ -51,41 +56,41 @@ async function createProductService(businessId, data) {
     }
 } 
 async function getProductsService(businessId, options = {}){
-    try{
-        const limit = Number(options.limit) || 100;
-        const offset = Number(options.offset) || 0;
 
-        const queryText = `
-            WITH page AS (
-                SELECT product_id, name, category_id, buying_price, selling_price,low_stock_threshhold
-                FROM products
-                WHERE business_id = $1
-                ORDER BY name
-                LIMIT $2 OFFSET $3
-            )
-                 SELECT p.product_id, p.name, p.category_id, p.buying_price, p.selling_price, p.low_stock_threshhold,
-                     COALESCE(s.quantity, 0) AS stock_quantity
-            FROM page p
-            LEFT JOIN stock s ON p.product_id = s.product_id
-        `;
+    const limit = Number(options.limit) || 100;
+    const offset = Number(options.offset) || 0;
 
-        const result = await query(queryText, [businessId, limit, offset]);
-        return (result && result.rowCount > 0) ? result.rows : [];
+    const queryText = `
+        WITH page AS (
+            SELECT product_id, name, category_id, buying_price, selling_price,low_stock_threshhold
+            FROM products
+            WHERE business_id = $1
+            ORDER BY name
+            LIMIT $2 OFFSET $3
+        )
+                SELECT p.product_id, p.name, p.category_id, p.buying_price, p.selling_price, p.low_stock_threshhold,
+                    COALESCE(s.quantity, 0) AS stock_quantity
+        FROM page p
+        LEFT JOIN stock s ON p.product_id = s.product_id
+    `;
 
-    }catch(error){
-        throw(error);
-    }
+    const result = await query(queryText, [businessId, limit, offset]);
+    return (result && result.rowCount > 0) ? result.rows : [];
+
+   
 }
 
 async function getProductService(productID,businessId){
-    try{
-        const queryText = "SELECT * FROM products WHERE (business_id=$1 AND product_id=$2)"
-        const result = await query(queryText,[businessId,productID]);
-        return (result && result.rowCount > 0) ? result.rows[0] : [];
 
-    }catch(error){
-        throw(error);
+    const queryText = "SELECT * FROM products WHERE (business_id=$1 AND product_id=$2)"
+    const result = await query(queryText,[businessId,productID]);
+    if(!result.rowCount){
+        throw new NotFoundError("Product Not found!");
     }
+
+    return result.rows[0];
+
+   
 }
 
 
@@ -96,9 +101,9 @@ async function updateProductService(productID, businessId, data) {
         const keys = Object.keys(data).filter(k => allowed.includes(k));
 
         if (keys.length === 0) {
-            const err = new Error('No updatable fields provided');
-            err.status = 400;
-            throw err;
+            const err = 'No updatable fields provided';
+            const statusCode = 400;
+            throw new AppError(err,statusCode);
         }
 
         const setClauses = keys.map((k, i) => `${k} = $${i+1}`).join(', ');
@@ -117,9 +122,8 @@ async function updateProductService(productID, businessId, data) {
             return result.rows[0];
         }
 
-        const err = new Error('Product not found');
-        err.status = 404;
-        throw err;
+        const err = 'Product not found';
+        throw new NotFoundError(err);
 
     } catch (error) {
         throw error;
@@ -130,17 +134,17 @@ async function updateProductService(productID, businessId, data) {
 
 async function deleteProductsService(businessId, ids) {
     if (!Array.isArray(ids) || ids.length === 0) {
-        const err = new Error('No product ids provided');
-        err.status = 400;
-        throw err;
+        const errMessage = 'No product ids provided';
+        const statusCode = 400;
+        throw new AppError(errMessage,statusCode);
     }
 
     // ensure all ids are numbers
     const parsed = ids.map(i => Number(i)).filter(n => Number.isInteger(n));
     if (parsed.length === 0) {
-        const err = new Error('Invalid product ids');
-        err.status = 400;
-        throw err;
+        const errMessage = 'Invalid product ids';
+        const statusCode = 400;
+        throw new AppError(errMessage,statusCode)
     }
 
     const client = await getClient();
@@ -151,6 +155,9 @@ async function deleteProductsService(businessId, ids) {
         const res = await client.query(queryText, [businessId, parsed]);
 
         await client.query('COMMIT');
+        if (res.rowCount === 0) {
+            throw new NotFoundError("No matching products found");
+        }
 
         // return array of deleted ids
         return res.rows.map(r => r.product_id);

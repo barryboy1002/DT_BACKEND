@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from "../middleware/authenticate.js";
-import {getStockMovementsController,getLowStockController,getOutOfStockController} from  "../controllers/stockMovementControllers.js";
+import {getStockMovementsController,getLowStockController,getOutOfStockController} from  "../controllers/stockMovementController.js";
 
 
 const stocksRouter = Router();
