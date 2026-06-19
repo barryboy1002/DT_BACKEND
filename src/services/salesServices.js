@@ -1,35 +1,72 @@
 import { query, getClient } from "../db/index.js";
+import { AppError } from "../errors/AppError.js";
+import { NotFoundError } from "../errors/NotFoundError.js";
 
 async function createSaleService(businessId, items, paymentMethod, customerName = null) {
+    if (!businessId) {
+        throw new AppError("Business ID is required", 400);
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+        throw new AppError("Sale must contain at least one item", 400);
+    }
     const client = await getClient();
     try {
-        const receiptNumber = `RCP-${Date.now().toString().slice(-8)}`;
-        const saleQueryText = "INSERT INTO sales(business_id,customer_name,payment_method,receipt_number) VALUES ($1, $2, $3, $4) RETURNING sale_id, receipt_number";
-        await client.query('BEGIN');
-        const saleResult = await client.query(saleQueryText, [businessId, customerName, paymentMethod, receiptNumber]);
-        const saleId = saleResult.rows[0].sale_id;
-        const savedReceipt = saleResult.rows[0].receipt_number;
+        await client.query("BEGIN");
 
-        // Build bulk insert for sale_items
+        const receiptNumber = `RCP-${Date.now().toString().slice(-8)}`;
+
+        const saleQuery = `
+            INSERT INTO sales (business_id, customer_name, payment_method, receipt_number)
+            VALUES ($1, $2, $3, $4)
+            RETURNING sale_id, receipt_number
+        `;
+
+        const saleResult = await client.query(saleQuery, [
+            businessId,
+            customerName,
+            paymentMethod,
+            receiptNumber
+        ]);
+
+        const saleId = saleResult.rows[0].sale_id;
+        const receipt = saleResult.rows[0].receipt_number;
+
         const values = [];
         const params = [];
+
         items.forEach((item, index) => {
-            const offset = index * 4;
-            values.push(`($${offset + 1 + 0}, $${offset + 2 + 0}, $${offset + 3 + 0}, $${offset + 4 + 0})`);
-            params.push(saleId, item.product_id || item.productID, item.quantity, item.unit_price);
+            const base = index * 4;
+
+            values.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`);
+
+            params.push(
+                saleId,
+                item.productId,
+                item.quantity,
+                item.unitPrice
+            );
         });
 
-        const saleItemsQuery = `INSERT INTO sale_items(sale_id, product_id, quantity, unit_price) VALUES ${values.join(', ')} RETURNING *`;
-        const result = await client.query(saleItemsQuery, params);
+        const itemsQuery = `
+            INSERT INTO sale_items (sale_id, product_id, quantity, unit_price)
+            VALUES ${values.join(", ")}
+            RETURNING *
+        `;
 
+        const itemsResult = await client.query(itemsQuery, params);
 
-        await client.query('COMMIT');
-        return { sale_id: saleId, receipt_number: savedReceipt, items: result.rows };
+        await client.query("COMMIT");
+
+        return {
+            saleId,
+            receiptNumber: receipt,
+            items: itemsResult.rows
+        };
     } catch (error) {
         await client.query('ROLLBACK');
         throw error;
     } finally {
-        if (client && typeof client.release === 'function') client.release();
+        client.release();
     }
 }
 

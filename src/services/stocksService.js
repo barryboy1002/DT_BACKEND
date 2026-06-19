@@ -30,32 +30,45 @@ async function getStockMovementsService(businessId, options = {}) {
 
     return result.rows;
 }
-async function getLowStockService(businessId){
-    try{
-        const stockQuery = `SELECT COUNT(*) AS low_stock_count
-                        FROM products p
-                        LEFT JOIN stock s ON s.product_id = p.product_id
-                        WHERE p.business_id = $1
-                        AND COALESCE(s.quantity, 0) < COALESCE(p.low_stock_threshhold, 0);`
-        const result = await query(stockQuery, [businessId]);
-        return (result||result.rowCount > 0) ? result.rows[0]: [];
-    }catch(error){
-        throw error;
+
+async function getLowStockService(businessId) {
+    if (!businessId) {
+        throw new AppError("Business ID is required", 400);
     }
 
+    const stockQuery = `
+        SELECT COUNT(*) AS low_stock_count
+        FROM products p
+        LEFT JOIN stock s ON s.product_id = p.product_id
+        WHERE p.business_id = $1
+        AND COALESCE(s.quantity, 0) < COALESCE(p.low_stock_threshold, 0)
+    `;
+
+    const result = await query(stockQuery, [businessId]);
+
+    return {
+        low_stock_count: Number(result.rows[0].low_stock_count)
+    };
 }
-async function getOutOfStockService(businessId){
-    try{
-        const OutOfStockQuery = `SELECT COUNT(*) AS out_of_stock
-                 FROM products p 
-                 LEFT JOIN stock s ON s.product_id = p.product_id
-                 WHERE business_id = $1
-                 AND COALESCE(s.quantity,0) = 0`
-        const result = await query(OutOfStockQuery, [businessId]);
-        return (result||result.rowCount > 0) ? result.rows[0]: [];
-    }catch(error){
-        throw error;
+
+async function getOutOfStockService(businessId) {
+    if (!businessId) {
+        throw new AppError("Business ID is required", 400);
     }
+
+    const queryText = `
+        SELECT COUNT(*) AS out_of_stock
+        FROM products p
+        LEFT JOIN stock s ON s.product_id = p.product_id
+        WHERE p.business_id = $1
+        AND COALESCE(s.quantity, 0) = 0
+    `;
+
+    const result = await query(queryText, [businessId]);
+
+    return {
+        out_of_stock: Number(result.rows[0].out_of_stock)
+    };
 }
 
 export {getStockMovementsService,getLowStockService,getOutOfStockService}
