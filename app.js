@@ -7,7 +7,7 @@ import { purchasesRouter } from "./src/routes/purchasesRouter.js";
 import { suppliersRouter } from "./src/routes/suppliersRouter.js";
 import { categoriesRouter } from "./src/routes/categoriesRouter.js";
 import { reportsRouter } from "./src/routes/reportsRouter.js";
-import { errHandler } from "./src/errors/error.js";
+import { errHandler } from "./src/middleware/errHandler.js";
 
 const app = express();
 
