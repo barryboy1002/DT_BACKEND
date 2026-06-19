@@ -2,9 +2,9 @@ import { createSaleService, listSalesService, getSaleService } from "../services
 
 async function createSaleController(req,res,next){
     const {businessId} = req.user
-    const {items,payment_method,customer_name} = req.body
+    const {items,paymentMethod,customerName} = req.body
     try{
-        const created =  await createSaleService(businessId,items,payment_method,customer_name);
+        const created =  await createSaleService(businessId,items,paymentMethod,customerName);
         res.status(201).json({success: true, data: created});
     }catch(error){
         next(error);

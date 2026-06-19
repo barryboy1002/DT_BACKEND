@@ -71,16 +71,16 @@ async function createSaleService(businessId, items, paymentMethod, customerName 
 }
 
 
-async function listSalesService(businessId, options = {}){
+async function listSalesService(businessId, options = {}) {
     const page = Number(options.page) || 1;
     const limit = Number(options.limit) || 20;
     const offset = (page - 1) * limit;
+
     const from = options.from || null;
     const to = options.to || null;
-    const payment_method = options.payment_method || null;
+    const paymentMethod = options.paymentMethod || null;
 
-    // Build where clauses
-    const where = ['s.business_id = $1'];
+    const where = ["s.business_id = $1"];
     const params = [businessId];
     let idx = 2;
 
@@ -88,49 +88,75 @@ async function listSalesService(businessId, options = {}){
         where.push(`s.date_time >= $${idx++}`);
         params.push(from);
     }
+
     if (to) {
         where.push(`s.date_time <= $${idx++}`);
         params.push(to);
     }
-    if (payment_method) {
+
+    if (paymentMethod) {
         where.push(`s.payment_method = $${idx++}`);
-        params.push(payment_method);
+        params.push(paymentMethod);
     }
 
-    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const whereSql = `WHERE ${where.join(" AND ")}`;
 
-    const q = `
-      SELECT s.sale_id, s.customer_name, s.payment_method, s.date_time,
-             COALESCE(SUM(si.quantity * si.unit_price),0) AS total,
-             COUNT(si.sale_item_id) AS items_count
-      FROM sales s
-      LEFT JOIN sale_items si ON si.sale_id = s.sale_id
-      ${whereSql}
-      GROUP BY s.sale_id
-      ORDER BY s.date_time DESC
-      LIMIT $${idx++} OFFSET $${idx++}
+    const queryText = `
+        SELECT 
+            s.sale_id,
+            s.customer_name,
+            s.payment_method,
+            s.date_time,
+            COALESCE(SUM(si.quantity * si.unit_price), 0) AS total,
+            COUNT(si.sale_item_id) AS items_count
+        FROM sales s
+        LEFT JOIN sale_items si ON si.sale_id = s.sale_id
+        ${whereSql}
+        GROUP BY s.sale_id
+        ORDER BY s.date_time DESC
+        LIMIT $${idx++} OFFSET $${idx++}
     `;
 
     params.push(limit, offset);
-    const res = await query(q, params);
+
+    const res = await query(queryText, params);
+
     return {
-      data: res.rows || [],
-      meta: { page, limit }
+        data: res.rows,
+        meta: { page, limit }
     };
 }
 
-async function getSaleService(saleId, businessId){
-    const qSale = `SELECT sale_id, customer_name, payment_method, date_time FROM sales WHERE sale_id = $1 AND business_id = $2`;
-    const saleRes = await query(qSale, [saleId, businessId]);
-    if (!saleRes || saleRes.rowCount === 0) {
-        const err = new Error('Sale not found'); err.status = 404; throw err;
+async function getSaleService(saleId, businessId) {
+    const saleQuery = `
+        SELECT sale_id, customer_name, payment_method, date_time
+        FROM sales
+        WHERE sale_id = $1 AND business_id = $2
+    `;
+
+    const saleRes = await query(saleQuery, [saleId, businessId]);
+
+    if (!saleRes.rowCount) {
+        throw new NotFoundError("Sale not found");
     }
+
     const sale = saleRes.rows[0];
 
-    const qItems = `SELECT sale_item_id, product_id, quantity, unit_price FROM sale_items WHERE sale_id = $1`;
-    const itemsRes = await query(qItems, [saleId]);
-    sale.items = itemsRes.rows || [];
-    sale.total = sale.items.reduce((s,i)=> s + Number(i.quantity) * Number(i.unit_price), 0);
+    const itemsQuery = `
+        SELECT sale_item_id, product_id, quantity, unit_price
+        FROM sale_items
+        WHERE sale_id = $1
+    `;
+
+    const itemsRes = await query(itemsQuery, [saleId]);
+
+    sale.items = itemsRes.rows;
+
+    sale.total = sale.items.reduce(
+        (sum, item) => sum + Number(item.quantity) * Number(item.unit_price),
+        0
+    );
+
     return sale;
 }
 
