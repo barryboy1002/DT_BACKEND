@@ -9,6 +9,7 @@ import { categoriesRouter } from "./src/routes/categoriesRouter.js";
 import { reportsRouter } from "./src/routes/reportsRouter.js";
 import { authRouter } from './src/routes/authRouter.js';
 import { errHandler } from "./src/middleware/errHandler.js";
+import { authorize } from './src/middleware/authorize.js';
 
 const app = express();
 
@@ -28,7 +29,7 @@ app.use("/categories", categoriesRouter);
 app.use("/purchases", purchasesRouter);
 
 // reports
-app.use('/reports', reportsRouter);
+app.use('/reports',authorize(["owner", "manager"]), reportsRouter);
 
 
 app.use(errHandler);
