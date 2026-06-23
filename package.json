@@ -12,7 +12,11 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "cors": "^2.8.6"
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "express-session": "^1.19.0",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0"
   },
   "devDependencies": {
     "@jest/globals": "^30.4.1",
@@ -28,5 +32,5 @@
   "jest": {
     "testEnvironment": "node",
     "transform": {}
-}
+  }
 }

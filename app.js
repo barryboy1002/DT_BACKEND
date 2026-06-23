@@ -7,12 +7,15 @@ import { purchasesRouter } from "./src/routes/purchasesRouter.js";
 import { suppliersRouter } from "./src/routes/suppliersRouter.js";
 import { categoriesRouter } from "./src/routes/categoriesRouter.js";
 import { reportsRouter } from "./src/routes/reportsRouter.js";
+import { authRouter } from './src/routes/authRouter.js';
 import { errHandler } from "./src/middleware/errHandler.js";
 
 const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+app.use("/auth", authRouter);
 
 app.use("/sales", salesRouter);
 app.use("/products", productsRouter);
