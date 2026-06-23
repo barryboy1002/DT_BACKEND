@@ -6,7 +6,7 @@ import { authenticate } from "../middleware/authenticate.js";
 const router = Router();
 
 router.get('/', authenticate, listCategoriesController);
-router.post('/', authenticate, validateCategory, createCategoryController);
+router.post('/', authenticate,authorize(["owner", "manager"]), validateCategory, createCategoryController);
 router.patch('/:categoryId', authenticate, validateCategory, renameCategoryController);
 router.delete('/:categoryId', authenticate, deleteCategoryController);
 

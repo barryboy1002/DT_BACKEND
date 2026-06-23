@@ -1,7 +1,7 @@
 import { listCategoriesService, createCategoryService, renameCategoryService, deleteCategoryService } from "../services/categoriesService.js";
 
 async function listCategoriesController(req, res, next) {
-  const businessId = req.user?.businessId || req.params?.businessId;
+  const {businessId} = req.user
   try {
     const rows = await listCategoriesService(businessId);
     res.status(200).json({ success: true, data: rows });
@@ -11,7 +11,7 @@ async function listCategoriesController(req, res, next) {
 }
 
 async function createCategoryController(req, res, next) {
-  const businessId = req.user?.businessId || req.params?.businessId;
+  const {businessId} = req.user
   const { name } = req.body;
   try {
     const created = await createCategoryService(businessId, name);
@@ -22,7 +22,7 @@ async function createCategoryController(req, res, next) {
 }
 
 async function renameCategoryController(req, res, next) {
-  const businessId = req.user?.businessId || req.params?.businessId;
+  const {businessId} = req.user
   const categoryId = Number(req.params?.categoryId);
   const { name } = req.body;
   try {
@@ -34,7 +34,7 @@ async function renameCategoryController(req, res, next) {
 }
 
 async function deleteCategoryController(req, res, next) {
-  const businessId = req.user?.businessId || req.params?.businessId;
+  const {businessId} = req.user
   const categoryId = Number(req.params?.categoryId);
   try {
     const deletedId = await deleteCategoryService(categoryId, businessId);

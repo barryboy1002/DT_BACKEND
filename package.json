@@ -32,6 +32,6 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "transform": {}
+    "verbose": true
   }
 }
