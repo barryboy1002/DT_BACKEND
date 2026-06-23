@@ -4,7 +4,7 @@ import { listPurchasesService,
    createPurchaseService } from "../services/purchasesService.js";
 
 async function listPurchasesController(req,res,next){
-  const businessId = req.user?.businessId;
+  const {businessId} = req.user
   const { from,to,supplier_id,page,limit } = req.query;
   try{
     const result = await listPurchasesService(businessId,{ from,to,supplier_id,page,limit });
@@ -17,7 +17,7 @@ async function listPurchasesController(req,res,next){
 }
 
 async function getPurchaseController(req,res,next){
-  const businessId = req.user?.businessId;
+  const {businessId} = req.user
   const purchaseId = Number(req.params?.purchaseId);
   try{
     const purchase = await getPurchaseService(purchaseId,
@@ -31,7 +31,7 @@ async function getPurchaseController(req,res,next){
 }
 
 async function getPurchasesByProductController(req,res,next){
-  const businessId = req.user?.businessId;
+  const {businessId} = req.user
   const productId = Number(req.params?.productId);
   const { page, limit } = req.query;
   try{
@@ -47,7 +47,7 @@ async function getPurchasesByProductController(req,res,next){
 }
 
 async function createPurchaseController(req,res,next){
-  const businessId = req.user?.businessId;
+  const {businessId} = req.user
   const { supplier_id, items, payment_method, date_arrived } = req.body;
   try{
     const result = await createPurchaseService(businessId,supplier_id,items,payment_method,date_arrived);

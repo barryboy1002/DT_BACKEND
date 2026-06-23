@@ -3,7 +3,7 @@ import {getStockMovementsService, getLowStockService,getOutOfStockService} from 
 
 
 async function getStockMovementsController(req,res,next){
-    const businessId = req.user?.businessId
+    const {businessId} = req.user
     const {limit, offset} = req.query;
     try{
         const movements = await getStockMovementsService(businessId, {limit,offset});
@@ -14,7 +14,7 @@ async function getStockMovementsController(req,res,next){
 }
 
 async function getLowStockController(req,res,next){
-    const businessId = req.user?.businessId
+    const {businessId} = req.user
     try{
         const lowStock  = await getLowStockService(businessId);
         res.status(200).json(lowStock);
@@ -23,7 +23,7 @@ async function getLowStockController(req,res,next){
     }
 }
 async function getOutOfStockController(req,res,next){
-    const businessId = req.user?.businessId
+    const {businessId} = req.user
     try{
         const lowStock  = await getOutOfStockService(businessId);
         res.status(200).json(lowStock);

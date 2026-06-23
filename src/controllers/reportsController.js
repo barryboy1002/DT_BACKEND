@@ -1,7 +1,7 @@
 import { salesSummaryService, revenueByPeriodService, transactionsCountService } from "../services/reportsService.js";
 
 async function salesSummaryController(req,res,next){
-  const businessId = req.user?.businessId;
+  const {businessId} = req.user
   const from = req.query.from || new Date().toISOString();
   const to = req.query.to || new Date().toISOString();
   try{
@@ -11,7 +11,7 @@ async function salesSummaryController(req,res,next){
 }
 
 async function revenueByPeriodController(req,res,next){
-  const businessId = req.user?.businessId;
+  const {businessId} = req.user
   const from = req.query.from;
   const to = req.query.to;
   const interval = req.query.interval || 'day';
@@ -22,7 +22,7 @@ async function revenueByPeriodController(req,res,next){
 }
 
 async function transactionsCountController(req,res,next){
-  const businessId = req.user?.businessId;
+  const {businessId} = req.user
   const date = req.query.date || new Date().toISOString();
   try{
     const data = await transactionsCountService(businessId, date);

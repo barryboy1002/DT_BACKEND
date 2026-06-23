@@ -1,7 +1,7 @@
 import { listSuppliersService, getSupplierService, createSupplierService, updateSupplierService } from "../services/suppliersService.js";
 
 async function listSuppliersController(req,res,next){
-  const businessId = req.user?.businessId;
+  const {businessId} = req.user;
   const { page, limit } = req.query;
   try{
     const result = await listSuppliersService(businessId,{ page, limit });
@@ -10,7 +10,7 @@ async function listSuppliersController(req,res,next){
 }
 
 async function getSupplierController(req,res,next){
-  const businessId = req.user?.businessId;
+  const {businessId} = req.user;
   const supplierId = req.params?.supplierId;
   try{
     const supplier = await getSupplierService(supplierId,businessId);
@@ -19,7 +19,7 @@ async function getSupplierController(req,res,next){
 }
 
 async function createSupplierController(req,res,next){
-  const businessId = req.user?.businessId;
+  const {businessId} = req.user?.businessId;
   const payload = req.body;
   try{
     const supplier = await createSupplierService(businessId,payload);
@@ -28,7 +28,7 @@ async function createSupplierController(req,res,next){
 }
 
 async function updateSupplierController(req,res,next){
-  const businessId = req.user?.businessId;
+  const {businessId }= req.user
   const supplierId = req.params?.supplierId;
   const payload = req.body;
   try{

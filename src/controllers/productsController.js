@@ -7,7 +7,7 @@ import { createProductService,
 
 async function createProductController(req, res, next) {
     // prefer businessId from authenticated user
-    const businessId = req.user?.businessId || req.params?.businessId;
+    const {businessId} = req.user
     try {
         const product = await createProductService(businessId, req.body);
         res.status(201).json(product);
@@ -17,11 +17,11 @@ async function createProductController(req, res, next) {
 }
 
 async function getProductsController(req, res, next){
-    const businessId = req.user?.businessId || req.params?.businessId;
+    const {businessId} = req.user
     const {limit, offset} = req.query;
     try {
         const products = await getProductsService(businessId,{limit, offset});
-        res.status(200).json(products);
+        res.status(200).json({"success":true,"data":products});
 
     }catch(error){
         next(error);
@@ -30,7 +30,7 @@ async function getProductsController(req, res, next){
 }
 
 async function getProductController(req,res,next){
-     const businessId = req.user?.businessId || req.params?.businessId;
+     const {businessId} = req.user
      const productId   = req.params?.productId
      try{
         const product =  await getProductService(productId,businessId);
@@ -41,7 +41,7 @@ async function getProductController(req,res,next){
      }
 }
 async function updateProductController(req,res,next){
-    const businessId = req.user?.businessId || req.params?.businessId;
+    const {businessId} = req.user
     const productId   = req.params?.productId;
 
     try{
@@ -54,7 +54,7 @@ async function updateProductController(req,res,next){
 }
 
 async function deleteProductsController(req, res, next) {
-    const businessId = req.user?.businessId || req.params?.businessId;
+    const {businessId} = req.user
     const ids = req.body?.ids;
     try {
         const deletedIds = await deleteProductsService(businessId, ids);
