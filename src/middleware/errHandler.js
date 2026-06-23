@@ -1,10 +1,19 @@
-const errHandler = (error,req,res,next) => {
-    console.error("Error: ", error.message)
+import { AppError } from "../errors/AppError.js";
 
-    const status = error.status || 500;
-    const message = error.message || "Internal Server Error";
+function errorHandler(err, req, res, next) {
 
-    res.status(status).json({success: false, error : message});
+    let error = err;
 
+    // Normalize unknown errors
+    if (!(error instanceof AppError)) {
+        error = new AppError("Internal Server Error", 500);
+    }
+
+    res.status(error.statusCode).json({
+        success: false,
+        error: error.message,
+        ...(error.details && { details: error.details })
+    });
 }
-export {errHandler}
+
+export { errorHandler };
