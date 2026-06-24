@@ -1,4 +1,4 @@
-import { salesSummaryService, revenueByPeriodService, transactionsCountService } from "../services/reportsService.js";
+import { salesSummaryService, revenueByPeriodService, transactionsCountService ,productDistributionService} from "../services/reportsService.js";
 
 async function salesSummaryController(req,res,next){
   const {businessId} = req.user
@@ -30,4 +30,119 @@ async function transactionsCountController(req,res,next){
   }catch(e){ next(e); }
 }
 
-export { salesSummaryController, revenueByPeriodController, transactionsCountController };
+async function getProductDistributionController(
+    req,
+    res,
+    next
+){
+    try{
+        const businessId =
+            req.user.businessId;
+
+        const period =
+            req.query.period || "monthly";
+
+        let from;
+        let to = new Date();
+
+        switch(period){
+
+            case "weekly":
+                from = new Date();
+                from.setDate(
+                    from.getDate() - 7
+                );
+                break;
+
+            case "yearly":
+                from = new Date();
+                from.setFullYear(
+                    from.getFullYear() - 1
+                );
+                break;
+
+            default:
+                from = new Date();
+                from.setMonth(
+                    from.getMonth() - 1
+                );
+        }
+
+        const data =
+            await productDistributionService(
+                businessId,
+                from,
+                to
+            );
+
+        res.status(200).json({
+            success:true,
+            data
+        });
+
+    }catch(error){
+        next(error);
+    }
+}
+
+async function getSalesTrendController(
+    req,
+    res,
+    next
+){
+    try{
+        const businessId =
+            req.user.businessId;
+
+        const period =
+            req.query.period || "monthly";
+
+        let from;
+        let to = new Date();
+        let interval;
+
+        switch(period){
+
+            case "weekly":
+                from = new Date();
+                from.setDate(
+                    from.getDate() - 7
+                );
+                interval = "day";
+                break;
+
+            case "yearly":
+                from = new Date();
+                from.setFullYear(
+                    from.getFullYear() - 1
+                );
+                interval = "month";
+                break;
+
+            default:
+                from = new Date();
+                from.setMonth(
+                    from.getMonth() - 1
+                );
+                interval = "week";
+        }
+
+        const data =
+            await revenueByPeriodService(
+                businessId,
+                from,
+                to,
+                interval
+            );
+
+        res.status(200).json({
+            success:true,
+            data
+        });
+
+    }catch(error){
+        next(error);
+    }
+}
+
+export { salesSummaryController, revenueByPeriodController, transactionsCountController, getProductDistributionController, getSalesTrendController };

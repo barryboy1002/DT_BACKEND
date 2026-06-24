@@ -39,7 +39,7 @@ app.use("/categories", categoriesRouter);
 app.use("/purchases", purchasesRouter);
 
 // reports
-app.use('/reports',authorize(["owner", "manager"]), reportsRouter);
+app.use('/reports', reportsRouter);
 
 
 app.use(errorHandler);

@@ -97,4 +97,49 @@ async function getSaleService(saleId, businessId){
     return sale;
 }
 
-export { createSaleService, listSalesService, getSaleService };
+async function recentSalesService(
+    businessId,
+    limit = 10
+){
+    const q = `
+        SELECT
+            s.sale_id,
+            s.receipt_number,
+            s.customer_name,
+            s.payment_method,
+            s.date_time,
+
+            COALESCE(
+                SUM(
+                    si.quantity * si.unit_price
+                ),
+                0
+            ) AS total_amount
+
+        FROM sales s
+
+        LEFT JOIN sale_items si
+            ON si.sale_id = s.sale_id
+
+        WHERE s.business_id = $1
+
+        GROUP BY
+            s.sale_id,
+            s.receipt_number,
+            s.customer_name,
+            s.payment_method,
+            s.date_time
+
+        ORDER BY s.date_time DESC
+
+        LIMIT $2
+    `;
+
+    const result = await query(
+        q,
+        [businessId, limit]
+    );
+
+    return result.rows;
+}
+export { createSaleService, listSalesService, getSaleService, recentSalesService };
