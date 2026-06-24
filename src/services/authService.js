@@ -154,4 +154,28 @@ async function loginUserService(email, password){
 
 }
 
-export {registerUserService,registerBusinessOwnerService,loginUserService }
+
+async function getCurrentUserService(userId) {
+    const result = await query(
+        `
+        SELECT
+            user_id,
+            business_id,
+            name,
+            email,
+            role
+        FROM users
+        WHERE user_id = $1
+        `,
+        [userId]
+    );
+
+    if (result.rowCount === 0) {
+        throw new NotFoundError("User not found");
+    }
+
+    return result.rows[0];
+}
+
+
+export {getCurrentUserService,registerUserService,registerBusinessOwnerService,loginUserService }

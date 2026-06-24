@@ -1,4 +1,4 @@
-import { registerUserService,registerBusinessOwnerService,loginUserService } from "../services/authService.js";
+import { registerUserService,registerBusinessOwnerService,loginUserService ,getCurrentUserService} from "../services/authService.js";
 
 async function registerBusinessOwnerController(req,res,next){
     try{
@@ -41,4 +41,19 @@ async function loginController(req, res, next) {
         next(error);
     }
 }
-export  {registerUserController,registerBusinessOwnerController,loginController};
+async function getCurrentUserController(req, res, next) {
+    try {
+        const { userId } = req.user;
+
+        const user = await getCurrentUserService(userId);
+
+        res.status(200).json({
+            success: true,
+            data: user
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export  {registerUserController,registerBusinessOwnerController,loginController,getCurrentUserController};
