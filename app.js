@@ -11,6 +11,8 @@ import { reportsRouter } from "./src/routes/reportsRouter.js";
 import { authRouter } from './src/routes/authRouter.js';
 import { errorHandler } from "./src/middleware/errHandler.js";
 import { authorize } from './src/middleware/authorize.js';
+import {dashboardRouter } from "./src/routes/dashboardRouter.js";
+
 
 
 
@@ -24,7 +26,7 @@ app.use(cors({
   })); 
 
 app.use("/auth", authRouter);
-
+app.use("/dashboard",  dashboardRouter);
 app.use("/sales", salesRouter);
 app.use("/products", productsRouter);
 app.use("/stock", stocksRouter);
