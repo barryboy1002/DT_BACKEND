@@ -14,6 +14,6 @@ purchasesRouter.get('/:purchaseId', authenticate, getPurchaseController);
 purchasesRouter.get('/product/:productId', authenticate, getPurchasesByProductController);
 
 // Create a purchase
-purchasesRouter.post('/', authenticate,authorize(["owner", "manager"]), createPurchaseController);
+purchasesRouter.post('/', authenticate, createPurchaseController);
 
 export { purchasesRouter };

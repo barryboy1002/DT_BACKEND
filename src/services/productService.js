@@ -90,6 +90,8 @@ async function getProductsService(businessId, options = {}){
         SELECT
             p.product_id,
             p.name,
+            p.barcode,
+            p.unit,
             p.category_id,
             c.name AS category_name,
             p.buying_price,
@@ -122,6 +124,8 @@ async function getProductsService(businessId, options = {}){
         SELECT
             p.product_id,
             p.name,
+            p.barcode,
+            p.unit,
             p.category_id,
             c.name AS category_name,
             p.buying_price,

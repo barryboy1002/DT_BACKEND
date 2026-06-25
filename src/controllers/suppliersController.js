@@ -19,7 +19,7 @@ async function getSupplierController(req,res,next){
 }
 
 async function createSupplierController(req,res,next){
-  const {businessId} = req.user?.businessId;
+  const {businessId} = req.user;
   const payload = req.body;
   try{
     const supplier = await createSupplierService(businessId,payload);

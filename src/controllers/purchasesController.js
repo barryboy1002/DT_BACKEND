@@ -53,6 +53,7 @@ async function createPurchaseController(req,res,next){
     const result = await createPurchaseService(businessId,supplier_id,items,payment_method,date_arrived);
     res.status(201).json({ success:true, data: result });
   }catch(e){ 
+    console.error(e)
     next(e); 
   }
 }

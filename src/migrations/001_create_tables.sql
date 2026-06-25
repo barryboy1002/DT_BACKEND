@@ -67,7 +67,7 @@ CREATE TABLE stock_movements(
 CREATE TYPE pay_type AS ENUM ('cash', 'mpesa','credit');
 CREATE TABLE sales(
 	sale_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	business_id UUID NOT NULL REFERENCES businesses(business_id)
+	business_id UUID NOT NULL REFERENCES businesses(business_id),
 	customer_name VARCHAR(150),
 	payment_method pay_type NOT NULL,
 	receipt_number varchar(50) NOT NULL UNIQUE,
@@ -94,14 +94,14 @@ CREATE TABLE suppliers(
 CREATE TABLE purchases(
 	purchases_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	supplier_id uuid NOT NULL REFERENCES suppliers(supplier_id),
-	business_id uuid NOT NULL REFERENCES businesses(business_id)
+	business_id uuid NOT NULL REFERENCES businesses(business_id),
 	payment_method pay_type NOT NULL,
 	date_ordered TIMESTAMP DEFAULT NOW(),
 	date_arrived TIMESTAMP
 );
 CREATE TABLE purchase_items(
 	purchase_item_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	purchase_id INT NOT NULL REFERENCES purchases(purchase_id) ON DELETE CASCADE,
+	purchase_id INT NOT NULL REFERENCES purchases(purchases_id) ON DELETE CASCADE,
 	product_id INT NOT NULL REFERENCES products(product_id),
 	quantity DECIMAL(10,2) NOT NULL CHECK(quantity > 0),
 	unit_price DECIMAL(10,2) NOT NULL CHECK(unit_price >= 0) 
