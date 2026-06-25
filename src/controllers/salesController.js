@@ -13,9 +13,9 @@ async function createSaleController(req,res,next){
 
 async function listSalesController(req,res,next){
     const {businessId} = req.user
-    const {from,to,page,limit,payment_method} = req.query;
+    const {from,to,page,limit,payment_method,search} = req.query;
     try{
-        const result = await listSalesService(businessId,{from,to,page,limit,payment_method});
+        const result = await listSalesService(businessId,{from,to,page,limit,payment_method,search});
         res.status(200).json({success:true,data: result.data, meta: result.meta});
     }catch(error){
         next(error);
