@@ -62,16 +62,33 @@ async function getProductsService(businessId, options = {}){
 
     const queryText = `
         WITH page AS (
-            SELECT product_id, name, category_id, buying_price, selling_price,low_stock_threshhold
-            FROM products
-            WHERE business_id = $1
-            ORDER BY name
-            LIMIT $2 OFFSET $3
-        )
-                SELECT p.product_id, p.name, p.category_id, p.buying_price, p.selling_price, p.low_stock_threshhold,
-                    COALESCE(s.quantity, 0) AS stock_quantity
-        FROM page p
-        LEFT JOIN stock s ON p.product_id = s.product_id
+    SELECT
+        p.product_id,
+        p.name,
+        p.category_id,
+        p.buying_price,
+        p.selling_price,
+        p.low_stock_threshhold
+    FROM products p
+    WHERE p.business_id = $1
+    ORDER BY p.name
+    LIMIT $2 OFFSET $3
+    )
+
+    SELECT
+        p.product_id,
+        p.name,
+        p.category_id,
+        c.name AS category_name,
+        p.buying_price,
+        p.selling_price,
+        p.low_stock_threshhold,
+        COALESCE(s.quantity,0) AS stock_quantity
+    FROM page p
+    LEFT JOIN stock s
+        ON s.product_id = p.product_id
+    LEFT JOIN categories c
+        ON c.category_id = p.category_id
     `;
 
     const result = await query(queryText, [businessId, limit, offset]);

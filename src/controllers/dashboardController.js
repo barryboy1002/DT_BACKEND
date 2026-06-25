@@ -8,8 +8,8 @@ async function getDashboardSummaryController(
     next
 ){
     try{
-        const businessId =
-            req.user?.businessId;
+        const {businessId} =
+            req.user;
 
         const summary =
             await getDashboardSummaryService(

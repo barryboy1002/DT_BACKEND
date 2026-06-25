@@ -34,6 +34,8 @@ async function getDashboardSummaryService(businessId) {
             businessId
         )
     ]);
+    console.log("LOW STOCK:", lowStock);
+    console.log("OUT OF STOCK:", outOfStock);
 
     return {
         todayRevenue: revenue.revenue,

@@ -37,11 +37,12 @@ async function getLowStockService(businessId){
 
 }
 async function getOutOfStockService(businessId){
+    console.log("BUSINESS ID:", businessId);
     try{
         const OutOfStockQuery = `SELECT COUNT(*) AS out_of_stock
                  FROM products p 
                  LEFT JOIN stock s ON s.product_id = p.product_id
-                 WHERE business_id = $1
+                 WHERE p.business_id = $1
                  AND COALESCE(s.quantity,0) = 0`
         const result = await query(OutOfStockQuery, [businessId]);
         return (result||result.rowCount > 0) ? result.rows[0]: [];
