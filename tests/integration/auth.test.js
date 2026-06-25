@@ -1,5 +1,5 @@
 import request from "supertest";
-import app from "../../src/app.js"; // IMPORTANT: your express app export
+import app from "../../app.js"; // IMPORTANT: your express app export
 
 let token;
 

@@ -25,9 +25,12 @@ async function createProductService(businessId, data) {
         }
 
         const queryText = `INSERT INTO products
-            (business_id, category_id, name, barcode, buying_price, selling_price, brand, unit, description)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-            RETURNING *`;
+                        (business_id,category_id,name,barcode,buying_price,selling_price,brand,unit,description,low_stock_threshhold    )
+                        VALUES
+                        (
+                        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
+                        )
+                        RETURNING *`;
 
         const params = [
             businessId,
@@ -39,6 +42,7 @@ async function createProductService(businessId, data) {
             brand,
             unit,
             description,
+            low_stock_threshhold
         ];
         
 
@@ -61,42 +65,80 @@ async function getProductsService(businessId, options = {}){
 
     const limit = Number(options.limit) || 100;
     const offset = Number(options.offset) || 0;
+    const search = options.search ? options.search.trim() : null;
 
-    const queryText = `
-        WITH page AS (
-    SELECT
-        p.product_id,
-        p.name,
-        p.category_id,
-        p.buying_price,
-        p.selling_price,
-        p.low_stock_threshhold
-    FROM products p
-    WHERE p.business_id = $1
-    ORDER BY p.name
-    LIMIT $2 OFFSET $3
-    )
+    let queryText = '';
+    let params = [];
 
-    SELECT
-        p.product_id,
-        p.name,
-        p.category_id,
-        c.name AS category_name,
-        p.buying_price,
-        p.selling_price,
-        p.low_stock_threshhold,
-        COALESCE(s.quantity,0) AS stock_quantity
-    FROM page p
-    LEFT JOIN stock s
-        ON s.product_id = p.product_id
-    LEFT JOIN categories c
-        ON c.category_id = p.category_id
-    `;
+    if (search) {
+        queryText = `
+            WITH page AS (
+        SELECT
+            p.product_id,
+            p.name,
+            p.category_id,
+            p.buying_price,
+            p.selling_price,
+            p.low_stock_threshhold
+        FROM products p
+        WHERE p.business_id = $1
+          AND (p.name ILIKE $4 OR p.brand ILIKE $4 OR p.barcode ILIKE $4)
+        ORDER BY p.name
+        LIMIT $2 OFFSET $3
+        )
 
-    const result = await query(queryText, [businessId, limit, offset]);
+        SELECT
+            p.product_id,
+            p.name,
+            p.category_id,
+            c.name AS category_name,
+            p.buying_price,
+            p.selling_price,
+            p.low_stock_threshhold,
+            COALESCE(s.quantity,0) AS stock_quantity
+        FROM page p
+        LEFT JOIN stock s
+            ON s.product_id = p.product_id
+        LEFT JOIN categories c
+            ON c.category_id = p.category_id
+        `;
+        params = [businessId, limit, offset, `%${search}%`];
+    } else {
+        queryText = `
+            WITH page AS (
+        SELECT
+            p.product_id,
+            p.name,
+            p.category_id,
+            p.buying_price,
+            p.selling_price,
+            p.low_stock_threshhold
+        FROM products p
+        WHERE p.business_id = $1
+        ORDER BY p.name
+        LIMIT $2 OFFSET $3
+        )
+
+        SELECT
+            p.product_id,
+            p.name,
+            p.category_id,
+            c.name AS category_name,
+            p.buying_price,
+            p.selling_price,
+            p.low_stock_threshhold,
+            COALESCE(s.quantity,0) AS stock_quantity
+        FROM page p
+        LEFT JOIN stock s
+            ON s.product_id = p.product_id
+        LEFT JOIN categories c
+            ON c.category_id = p.category_id
+        `;
+        params = [businessId, limit, offset];
+    }
+
+    const result = await query(queryText, params);
     return (result && result.rowCount > 0) ? result.rows : [];
-
-   
 }
 
 async function getProductService(productID,businessId){

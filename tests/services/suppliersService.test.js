@@ -4,19 +4,19 @@ import { jest } from '@jest/globals';
 //
 // Mock db/index.js before importing the service
 //
-jest.unstable_mockModule('../../db/index.js', () => ({
+jest.unstable_mockModule('../../src/db/index.js', () => ({
     query: jest.fn(),
     getClient: jest.fn()
 }));
 
-const { query } = await import('../../db/index.js');
+const { query } = await import('../../src/db/index.js');
 
 const {
     listSuppliersService,
     getSupplierService,
     createSupplierService,
     updateSupplierService
-} = await import('../../services/suppliersService.js');
+} = await import('../../src/services/suppliersService.js');
 
 describe('suppliersService', () => {
 
