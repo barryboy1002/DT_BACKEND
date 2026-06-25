@@ -5,13 +5,21 @@ async function getStockMovementsService(businessId, options = {}){
     const offset = options.offset || 0;
 
     try{
-        const stockQuery = `WITH page AS(
-            SELECT movement_id, product_id, cause,quantity,note,date_time 
-            FROM stock_movements WHERE business_id =$1 
-            ORDER BY date_time LIMIT $2 OFFSET $3
-            )SELECT p.movement_id,p.product_id,pr.name,p.cause,p.quantity,p.note,p.date_time
-            FROM page p LEFT JOIN products pr ON p.product_id=pr.product_id
-             `
+        const stockQuery = `
+            SELECT 
+                sm.movement_id,
+                sm.product_id,
+                pr.name,
+                sm.cause,
+                sm.quantity,
+                sm.note,
+                sm.date_time
+            FROM stock_movements sm
+            LEFT JOIN products pr ON sm.product_id = pr.product_id
+            WHERE sm.business_id = $1
+            ORDER BY sm.date_time DESC
+            LIMIT $2 OFFSET $3
+        `
         const params = [businessId,limit,offset];
 
         const results = await query(stockQuery,params);

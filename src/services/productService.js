@@ -72,55 +72,30 @@ async function getProductsService(businessId, options = {}){
 
     if (search) {
         queryText = `
-            WITH page AS (
         SELECT
             p.product_id,
             p.name,
+            p.barcode,
+            p.unit,
             p.category_id,
+            c.name AS category_name,
             p.buying_price,
             p.selling_price,
-            p.low_stock_threshhold
+            p.low_stock_threshhold,
+            COALESCE(s.quantity,0) AS stock_quantity
         FROM products p
+        LEFT JOIN stock s
+            ON s.product_id = p.product_id
+        LEFT JOIN categories c
+            ON c.category_id = p.category_id
         WHERE p.business_id = $1
           AND (p.name ILIKE $4 OR p.brand ILIKE $4 OR p.barcode ILIKE $4)
         ORDER BY p.name
         LIMIT $2 OFFSET $3
-        )
-
-        SELECT
-            p.product_id,
-            p.name,
-            p.barcode,
-            p.unit,
-            p.category_id,
-            c.name AS category_name,
-            p.buying_price,
-            p.selling_price,
-            p.low_stock_threshhold,
-            COALESCE(s.quantity,0) AS stock_quantity
-        FROM page p
-        LEFT JOIN stock s
-            ON s.product_id = p.product_id
-        LEFT JOIN categories c
-            ON c.category_id = p.category_id
         `;
         params = [businessId, limit, offset, `%${search}%`];
     } else {
         queryText = `
-            WITH page AS (
-        SELECT
-            p.product_id,
-            p.name,
-            p.category_id,
-            p.buying_price,
-            p.selling_price,
-            p.low_stock_threshhold
-        FROM products p
-        WHERE p.business_id = $1
-        ORDER BY p.name
-        LIMIT $2 OFFSET $3
-        )
-
         SELECT
             p.product_id,
             p.name,
@@ -132,11 +107,14 @@ async function getProductsService(businessId, options = {}){
             p.selling_price,
             p.low_stock_threshhold,
             COALESCE(s.quantity,0) AS stock_quantity
-        FROM page p
+        FROM products p
         LEFT JOIN stock s
             ON s.product_id = p.product_id
         LEFT JOIN categories c
             ON c.category_id = p.category_id
+        WHERE p.business_id = $1
+        ORDER BY p.name
+        LIMIT $2 OFFSET $3
         `;
         params = [businessId, limit, offset];
     }

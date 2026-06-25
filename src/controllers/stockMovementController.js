@@ -7,7 +7,7 @@ async function getStockMovementsController(req,res,next){
     const {limit, offset} = req.query;
     try{
         const movements = await getStockMovementsService(businessId, {limit,offset});
-        res.status(200).json(movements);
+        res.status(200).json({ success: true, data: movements });
     }catch(error){
         next(error);
     }
