@@ -16,6 +16,7 @@ async function createProductService(businessId, data) {
             brand = null,
             unit = null,
             description = null,
+            low_stock_threshhold = 10
         } = data;
 
         if (!name || buying_price == null || selling_price == null) {
@@ -114,7 +115,7 @@ async function getProductService(productID,businessId){
 async function updateProductService(productID, businessId, data) {
     try {
         // Only allow certain fields to be updated
-        const allowed = ['name','category_id','barcode','buying_price','selling_price','brand','unit','description'];
+        const allowed = ['name','category_id','barcode','buying_price','selling_price','brand','unit','description','low_stock_threshhold'];
         const keys = Object.keys(data).filter(k => allowed.includes(k));
 
         if (keys.length === 0) {
