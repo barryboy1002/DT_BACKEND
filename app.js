@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from "cors";
+import helmet from 'helmet';
 
 import { salesRouter } from "./src/routes/salesRouter.js";
 import { productsRouter } from "./src/routes/productRouter.js";
@@ -12,18 +13,40 @@ import { authRouter } from './src/routes/authRouter.js';
 import { errorHandler } from "./src/middleware/errHandler.js";
 import { authorize } from './src/middleware/authorize.js';
 import {dashboardRouter } from "./src/routes/dashboardRouter.js";
+import { rateLimiter } from './src/middleware/rateLimiter.js';
 
 
 
 
 const app = express();
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// Security headers
+app.use(helmet({
+    contentSecurityPolicy: false, // Disable for API
+    crossOriginEmbedderPolicy: false
+}));
+
+// Rate limiting for all routes
+app.use(rateLimiter({ windowMs: 15 * 60 * 1000, max: 100 }));
+
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '10mb' }));
+
+// CORS configuration
+const allowedOrigins = process.env.FRONTEND_URL ? 
+    process.env.FRONTEND_URL.split(',') : 
+    ['http://localhost:5173'];
+
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
-  })); 
+}));
 
 app.use("/auth", authRouter);
 app.use("/dashboard",  dashboardRouter);

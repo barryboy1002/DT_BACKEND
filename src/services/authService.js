@@ -25,16 +25,16 @@ async function registerUserService(data){
         role)
         VALUES($1,$2,$3,$4,$5)
         RETURNING 
-        user_id
+        user_id,
         business_id,
         name,
         email,
-        password_hash,
         role`,
     [
     businessId,
     name,
     email,
+    hashPassword,
     role
     ])
 
@@ -130,7 +130,7 @@ async function loginUserService(email, password){
     }
     const user = result.rows[0];
 
-    const isMatch = bcrypt.compare(password,user.password_hash);
+    const isMatch = await bcrypt.compare(password,user.password_hash);
 
     if(!isMatch){
         throw new AppError("Invalid User Credentials", 401);
