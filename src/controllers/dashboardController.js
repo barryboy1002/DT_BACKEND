@@ -2,14 +2,11 @@ import {
     getDashboardSummaryService
 } from "../services/dashboardService.js";
 
-async function getDashboardSummaryController(
-    req,
+async function getDashboardSummaryController(req,
     res,
-    next
-){
+    next){
     try{
-        const {businessId} =
-            req.user;
+        const { businessId } =req.user;
 
         const summary =
             await getDashboardSummaryService(

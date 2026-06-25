@@ -41,16 +41,23 @@ async function getProductController(req,res,next){
      }
 }
 async function updateProductController(req,res,next){
-    const {businessId} = req.user
-    const productId   = req.params?.productId;
+    const { businessId } = req.user;
+    const productId = req.params?.productId;
 
     try{
-        const updated = await updateProductService(productId, businessId, req.body);
-        res.status(200).json(updated);
-    }catch(error){
-        next(error)
-    }
+        const updated =
+            await updateProductService(
+                productId,
+                businessId,
+                req.body
+            );
 
+        res.status(200).json(updated);
+
+    }catch(error){
+
+        next(error);
+    }
 }
 
 async function deleteProductsController(req, res, next) {

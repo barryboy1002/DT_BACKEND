@@ -18,6 +18,7 @@ async function createProductService(businessId, data) {
             description = null,
             low_stock_threshhold = 10
         } = data;
+        const cleanBarcode = barcode?.trim() === "" ? null: barcode;
 
         if (!name || buying_price == null || selling_price == null) {
             throw new AppError("Missing required product fields", 400);
@@ -32,7 +33,7 @@ async function createProductService(businessId, data) {
             businessId,
             category_id,
             name,
-            barcode,
+            cleanBarcode,
             buying_price,
             selling_price,
             brand,
@@ -116,6 +117,9 @@ async function updateProductService(productID, businessId, data) {
     try {
         // Only allow certain fields to be updated
         const allowed = ['name','category_id','barcode','buying_price','selling_price','brand','unit','description','low_stock_threshhold'];
+        if (data.barcode !== undefined && data.barcode.trim() === "") {
+            data.barcode = null;
+        }
         const keys = Object.keys(data).filter(k => allowed.includes(k));
 
         if (keys.length === 0) {
