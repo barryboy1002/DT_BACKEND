@@ -111,7 +111,24 @@ async function registerBusinessOwnerService(data){
             ]
             );
         await client.query("COMMIT");
-        return userResult.rows[0];
+        
+        const user = userResult.rows[0];
+        const token = signToken({
+            userId: user.user_id,
+            businessId: user.business_id,
+            role: user.role
+        });
+        
+        return {
+            token,
+            user: {
+                user_id: user.user_id,
+                business_id: user.business_id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        };
     }catch(error){
         await client.query('ROLLBACK');
         throw error;
