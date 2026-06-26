@@ -1,48 +1,81 @@
 import { AppError } from "../errors/AppError.js";
+import logger from "../utils/logger.js";
 
-// Simple in-memory rate limiter
-// For production, use Redis-based solution like express-rate-limit with Redis store
 const requestCounts = new Map();
 
 function rateLimiter(options = {}) {
-    const windowMs = options.windowMs || 15 * 60 * 1000; // 15 minutes
-    const maxRequests = options.max || 1000;
-    const message = options.message || "Too many requests, please try again later.";
+
+    const windowMs = options.windowMs ?? 15 * 60 * 1000;
+    const max = options.max ?? 100;
+    const message =
+        options.message ??
+        "Too many requests. Please try again later.";
 
     return (req, res, next) => {
-        const key = req.ip || req.connection.remoteAddress;
+
+        const key = req.ip;
         const now = Date.now();
-        
-        if (!requestCounts.has(key)) {
-            requestCounts.set(key, { count: 1, resetTime: now + windowMs });
-            return next();
+
+        let record = requestCounts.get(key);
+
+        if (!record) {
+
+            record = {
+                count: 0,
+                resetTime: now + windowMs
+            };
+
+            requestCounts.set(key, record);
         }
 
-        const record = requestCounts.get(key);
-        
         if (now > record.resetTime) {
-            record.count = 1;
-            record.resetTime = now + windowMs;
-            return next();
-        }
 
-        if (record.count >= maxRequests) {
-            throw new AppError(message, 429);
+            record.count = 0;
+            record.resetTime = now + windowMs;
         }
 
         record.count++;
+
+        res.setHeader("X-RateLimit-Limit", max);
+        res.setHeader(
+            "X-RateLimit-Remaining",
+            Math.max(max - record.count, 0)
+        );
+        res.setHeader(
+            "Retry-After",
+            Math.ceil(
+                (record.resetTime - now) / 1000
+            )
+        );
+
+        if (record.count > max) {
+
+            logger.warn("Rate limit exceeded", {
+                ip: req.ip,
+                url: req.originalUrl,
+                method: req.method
+            });
+
+            return next(
+                new AppError(message, 429)
+            );
+        }
+
         next();
     };
 }
 
-// Cleanup old entries every hour
 setInterval(() => {
+
     const now = Date.now();
-    for (const [key, record] of requestCounts.entries()) {
-        if (now > record.resetTime) {
+
+    for (const [key, record] of requestCounts) {
+
+        if (record.resetTime <= now) {
             requestCounts.delete(key);
         }
     }
+
 }, 60 * 60 * 1000);
 
 export { rateLimiter };
