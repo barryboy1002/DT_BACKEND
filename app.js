@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from "cors";
 import helmet from 'helmet';
+import logger from './src/utils/logger.js';
 
 import { salesRouter } from "./src/routes/salesRouter.js";
 import { productsRouter } from "./src/routes/productRouter.js";
@@ -26,8 +27,22 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 
-// Rate limiting for all routes
-app.use(rateLimiter({ windowMs: 15 * 60 * 1000, max: 100 }));
+// HTTP request logging
+app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        logger.info(`${req.method} ${req.path}`, {
+            status: res.statusCode,
+            duration: `${duration}ms`,
+            ip: req.ip
+        });
+    });
+    next();
+});
+
+// Rate limiting for all routes - increased limits
+app.use(rateLimiter({ windowMs: 15 * 60 * 1000, max: 500 }));
 
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.json({ limit: '10mb' }));
@@ -73,7 +88,9 @@ const PORT = process.env.PORT || 3000
 
 if (process.env.NODE_ENV !== 'test'){
     app.listen(PORT , () => {
-        console.log(`Server running on port ${PORT}`);
+        logger.info(`Server running on port ${PORT}`, { 
+            environment: process.env.NODE_ENV || 'development' 
+        });
     } )
 }
 

@@ -6,7 +6,7 @@ const requestCounts = new Map();
 
 function rateLimiter(options = {}) {
     const windowMs = options.windowMs || 15 * 60 * 1000; // 15 minutes
-    const maxRequests = options.max || 100;
+    const maxRequests = options.max || 1000;
     const message = options.message || "Too many requests, please try again later.";
 
     return (req, res, next) => {
