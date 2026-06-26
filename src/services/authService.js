@@ -49,10 +49,11 @@ async function registerBusinessOwnerService(data){
     plan,
     phone ,
     name,
-    businessEmail,
     email,
     password
     } = data;
+    // Use the same email for both business and user
+    const businessEmail = email;
     const client = await getClient();
     try{
 
