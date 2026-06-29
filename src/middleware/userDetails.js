@@ -1,5 +1,6 @@
 import validator from 'validator';
 
+import dns from "dns/promises";
 const userDetails = (req, res, next) => {
   const { email, name,businessName,phone } = req.body;
 
@@ -22,7 +23,17 @@ const userDetails = (req, res, next) => {
     return res.status(400).json({ error: 'Phone number must be between 10 and 15 characters' });
   }
 
+  const domain = email.split('@')[1];
+  try{
+    const records = await dns.resolveMx(domain);
+    if (records.length === 0) {
+      return res.status(400).json({ error: 'Email domain does not exist' });
+    }
+  }catch{
+    return res.status(400).json({ error: 'Invalid email domain' });
+  }
+
   next();
 };
 
-export default userDetails;
+export { userDetails};
