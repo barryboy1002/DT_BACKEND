@@ -2,10 +2,11 @@ import {Router } from 'express';
 import { registerUserController,registerBusinessOwnerController,loginController,getCurrentUserController } from '../controllers/authController.js';
 import { authorize } from '../middleware/authorize.js';
 import { authenticate } from '../middleware/authenticate.js';
+import {userDetails} from '../middleware/userDetails.js';
 
 const authRouter = Router();
-//TODO: Add validation middleware for the request body and implement login after registration
-authRouter.post("/register",registerBusinessOwnerController);
+//TODO: Add validation middleware for the request body 
+authRouter.post("/register",userDetails,registerBusinessOwnerController);
 authRouter.post("/createUser",authorize(["owner", "manager"]), registerUserController);
 authRouter.post("/login", loginController);
 
