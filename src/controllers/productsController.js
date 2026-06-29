@@ -2,11 +2,9 @@ import { createProductService,
     getProductsService,
     getProductService, 
     updateProductService, 
-    deleteProductsService }
- from "../services/productService.js";
+    deleteProductsService } from "../services/productService.js";
 
 async function createProductController(req, res, next) {
-    // prefer businessId from authenticated user
     const {businessId} = req.user
     try {
         const product = await createProductService(businessId, req.body);
@@ -28,15 +26,14 @@ async function getProductsController(req, res, next){
     }
 
 }
-
+// TODO: fix inconsistent use of response structure during frontend audit{}
 async function getProductController(req,res,next){
      const {businessId} = req.user
      const productId   = req.params?.productId
      try{
         const product =  await getProductService(productId,businessId);
         res.status(200).json(product);
-     }catch(error){
-        //we should figure out how to deal with 404 errors
+     }catch(error){        
         next(error)
      }
 }

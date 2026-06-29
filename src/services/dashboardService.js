@@ -34,8 +34,7 @@ async function getDashboardSummaryService(businessId) {
             businessId
         )
     ]);
-    console.log("LOW STOCK:", lowStock);
-    console.log("OUT OF STOCK:", outOfStock);
+    
 
     return {
         todayRevenue: revenue.revenue,
@@ -47,3 +46,5 @@ async function getDashboardSummaryService(businessId) {
 export {
     getDashboardSummaryService
 };
+
+//TODO : use the sale summary service to get the profits, costs.

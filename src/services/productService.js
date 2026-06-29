@@ -130,10 +130,7 @@ async function getProductService(productID,businessId){
     if(!result.rowCount){
         throw new NotFoundError("Product Not found!");
     }
-
-    return result.rows[0];
-
-   
+    return result.rows[0]; 
 }
 
 

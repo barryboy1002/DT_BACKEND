@@ -5,7 +5,7 @@ import { authenticate } from "../middleware/authenticate.js";
 
 const productsRouter = Router();
 
-// Use authentication to derive businessId from req.user
+
 productsRouter.get("/", authenticate, getProductsController);
 productsRouter.post("/", authenticate, validateProduct, createProductController);
 productsRouter.get("/:productId", authenticate, getProductController);

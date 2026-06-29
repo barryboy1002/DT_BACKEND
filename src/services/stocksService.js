@@ -32,12 +32,12 @@ async function getStockMovementsService(businessId, options = {}){
 
 async function getLowStockService(businessId){
     try{
-        const stockQuery = `SELECT COUNT(*) AS low_stock_count
+        const lowStockQuery = `SELECT COUNT(*) AS low_stock_count
                         FROM products p
                         LEFT JOIN stock s ON s.product_id = p.product_id
                         WHERE p.business_id = $1
                         AND COALESCE(s.quantity, 0) < COALESCE(p.low_stock_threshhold, 0);`
-        const result = await query(stockQuery, [businessId]);
+        const result = await query(lowStockQuery, [businessId]);
         return (result||result.rowCount > 0) ? result.rows[0]: [];
     }catch(error){
         throw error;
