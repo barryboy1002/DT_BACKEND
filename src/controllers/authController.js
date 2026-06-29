@@ -9,6 +9,7 @@ async function registerBusinessOwnerController(req,res,next){
             data:business
         });
 
+
     }catch(error){
         next(error);
     }
