@@ -9,7 +9,7 @@ async function registerUserService(data){
         email,
         password,
         role} =  data;
-    const existing = await query("SELECT user_id from users WHERE email= $1",[email])
+    const existing = await query("SELECT user_id from users WHERE email= $1 AND business_id = $2",[email, businessId])
     if(existing.rowCount > 0){
         throw new AppError("Email Already Exists",409);
     }
@@ -80,10 +80,7 @@ async function registerBusinessOwnerService(data){
         )
         const businessId = BusinessResult.rows[0].business_id;
         
-        const existingUser = await query("SELECT user_id from users WHERE email= $1",[email])
-        if(existingUser.rowCount > 0){
-            throw new AppError("Email Already Exists",409);
-        }
+        
 
         const passwordHash = await bcrypt.hash(password,10);
         const userResult = await client.query(
