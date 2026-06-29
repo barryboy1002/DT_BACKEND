@@ -1,7 +1,7 @@
 import validator from 'validator';
 
 import dns from "dns/promises";
-const userDetails = async(req, res, next) => {
+const userDetails = async (req, res, next) => {
   const { email, name,businessName,phone } = req.body;
 
   if (!email || !name || !businessName || !phone) {

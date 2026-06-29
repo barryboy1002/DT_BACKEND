@@ -1,6 +1,3 @@
-// Simple authentication middleware for local/dev usage.
-// For now it accepts an `X-Business-Id` header and attaches `req.user`.
-// Replace with real JWT verification in production.
 import { verifyToken } from "../utils/jwt.js";
 import { AppError } from "../errors/AppError.js";
 
@@ -11,16 +8,19 @@ function authenticate(req, res, next) {
       throw  new AppError("No token provided", 401);
     }
     //Expect bearer token
-    const token = authHeader.split(" ")[1];
-    if (!token) {
-      throw new AppError("Invalid token format", 401);
+    const [scheme,token] = authHeader.split(" ")[1];
+    if (!scheme == "Bearer"||!token) {
+      throw new AppError("Invalid authorization header", 401);
     }
     const decoded = verifyToken(token);
+    if (!decoded.userId || !decoded.role || !decoded.businessId) {
+          throw new AppError("Invalid token payload", 401);
+    }
 
     req.user = decoded;
     next();
   }catch(error){
-    next(error);
+    next(AppError("Invalid or expired token", 401));
   }
 
 }
