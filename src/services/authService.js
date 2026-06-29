@@ -60,8 +60,8 @@ async function registerBusinessOwnerService(data){
         await client.query("BEGIN");
         const existingBusiness = await client.query(
         `
-        SELECT user_id
-        FROM users
+        SELECT business_id
+        FROM businesses
         WHERE email = $1
         `,
         [businessEmail]

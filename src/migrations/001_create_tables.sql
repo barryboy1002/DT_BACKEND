@@ -12,7 +12,7 @@ CREATE TABLE businesses(
 	name VARCHAR(200) NOT NULL,
 	ac_status plan,
 	phone VARCHAR(20),
-	Email VARCHAR(120) NOT NULL,
+	Email VARCHAR(120) NOT NULL UNIQUE,
 	created_at TIMESTAMP DEFAULT NOW(),
 	PRIMARY KEY(business_id)
 );
