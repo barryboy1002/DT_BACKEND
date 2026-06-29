@@ -20,7 +20,7 @@ function authenticate(req, res, next) {
     req.user = decoded;
     next();
   }catch(error){
-    next(AppError("Invalid or expired token", 401));
+    next( new AppError("Invalid or expired token", 401));
   }
 
 }

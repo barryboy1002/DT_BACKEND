@@ -4,10 +4,7 @@ async function listCategoriesController(req, res, next) {
   const {businessId} = req.user
   try {
     const rows = await listCategoriesService(businessId);
-
-    res.status(200).json({ success: true,
-       data: rows 
-      });
+    res.status(200).json({ success: true,data: rows });
   } catch (error) {
     next(error);
   }
