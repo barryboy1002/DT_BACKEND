@@ -1,7 +1,7 @@
 import validator from 'validator';
 
 import dns from "dns/promises";
-const userDetails = (req, res, next) => {
+const userDetails = async(req, res, next) => {
   const { email, name,businessName,phone } = req.body;
 
   if (!email || !name || !businessName || !phone) {
@@ -32,6 +32,7 @@ const userDetails = (req, res, next) => {
   }catch{
     return res.status(400).json({ error: 'Invalid email domain' });
   }
+  email = validator.normalizeEmail(email);
 
   next();
 };
