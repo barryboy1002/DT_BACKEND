@@ -2,7 +2,7 @@ import validator from 'validator';
 
 import dns from "dns/promises";
 const userDetails = async (req, res, next) => {
-  const { email, name,businessName,phone } = req.body;
+  let { email, name,businessName,phone,pasword } = req.body;
 
   if (!email || !name || !businessName || !phone) {
     return res.status(400).json({ error: 'All fields are required' });
@@ -22,6 +22,17 @@ const userDetails = async (req, res, next) => {
   if(!validator.isLength(phone, { min: 10, max: 15 })){
     return res.status(400).json({ error: 'Phone number must be between 10 and 15 characters' });
   }
+  if (!validator.isStrongPassword(password, {
+    minLength: 8,
+    minLowercase: 1,
+    minUppercase: 1,
+    minNumbers: 1,
+    minSymbols: 1
+})) {
+    return res.status(400).json({
+        error: "Password must be at least 8 characters long and include uppercase, lowercase, a number, and a symbol."
+    });
+}
 
   const domain = email.split('@')[1];
   try{
