@@ -2,7 +2,7 @@ import validator from 'validator';
 
 import dns from "dns/promises";
 const userDetails = async (req, res, next) => {
-  let { email, name,businessName,phone,pasword } = req.body;
+  let { email, name,businessName,phone,password } = req.body;
 
   if (!email || !name || !businessName || !phone) {
     return res.status(400).json({ error: 'All fields are required' });
