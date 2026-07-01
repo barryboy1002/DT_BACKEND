@@ -1,5 +1,4 @@
 import express from 'express';
-import cors from "cors";
 import helmet from 'helmet';
 import logger from './src/utils/logger.js';
 
@@ -52,16 +51,6 @@ const allowedOrigins = process.env.FRONTEND_URL ?
     process.env.FRONTEND_URL.split(',') : 
     ['http://localhost:5173'];
 
-app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true
-}));
 
 app.use("/auth", authRouter);
 app.use("/dashboard",  dashboardRouter);
