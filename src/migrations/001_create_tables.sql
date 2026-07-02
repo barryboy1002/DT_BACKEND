@@ -41,7 +41,7 @@ CREATE TABLE products(
 	business_id uuid NOT NULL REFERENCES businesses(business_id),
 	category_id INT  NOT NULL REFERENCES categories(category_id),
 	name VARCHAR(200) NOT NULL,
-	barcode VARCHAR(100) UNIQUE,
+	barcode VARCHAR(100),
 	buying_price DECIMAL(10,2) NOT NULL CHECK(buying_price >= 0),
 	selling_price DECIMAL(10,2) NOT NULL CHECK(selling_price >= 0),
 	brand VARCHAR(100),
