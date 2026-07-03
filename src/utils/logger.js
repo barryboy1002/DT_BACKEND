@@ -1,6 +1,7 @@
 import winston from 'winston';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs  from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,6 +45,10 @@ const logger = winston.createLogger({
 // Add file transports in production
 if (process.env.NODE_ENV === 'production') {
     const logsDir = path.join(__dirname, '../../logs');
+    
+  if (!fs.existsSync(logsDir)){
+    fs.mkdir(logsDir, { recursive: true });
+  }
     
     // Error logs
     logger.add(new winston.transports.File({
