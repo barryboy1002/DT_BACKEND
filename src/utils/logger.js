@@ -47,7 +47,7 @@ if (process.env.NODE_ENV === 'production') {
     const logsDir = path.join(__dirname, '../../logs');
     
   if (!fs.existsSync(logsDir)){
-    fs.mkdir(logsDir, { recursive: true });
+    fs.mkdirSync(logsDir, { recursive: true });
   }
     
     // Error logs
