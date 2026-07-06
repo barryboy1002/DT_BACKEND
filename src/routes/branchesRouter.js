@@ -11,9 +11,9 @@ import {
 
 const branchesRouter = Router();
 
-branchesRouter.get("/", authenticate, authorize(["owner", "manager"]), listBranchesController);
+branchesRouter.get("/", authenticate, authorize(["owner"]), listBranchesController);
 branchesRouter.post("/", authenticate, authorize(["owner"]), createBranchController);
-branchesRouter.get("/:branchId", authenticate, authorize(["owner", "manager"]), getBranchController);
+branchesRouter.get("/:branchId", authenticate, authorize(["owner"]), getBranchController);
 branchesRouter.put("/:branchId", authenticate, authorize(["owner"]), updateBranchController);
 branchesRouter.delete("/:branchId", authenticate, authorize(["owner"]), deleteBranchController);
 

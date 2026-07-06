@@ -2,6 +2,7 @@ import { query, getClient } from "../db/index.js";
 import bcrypt from 'bcrypt';
 import {AppError} from '../errors/AppError.js'
 import { signToken } from "../utils/jwt.js";
+import { NotFoundError } from "../errors/NotFoundError.js";
 
 async function registerUserService(data){
     const {businessId,
@@ -45,6 +46,61 @@ async function registerUserService(data){
     return result.rows[0];
     
 
+}
+
+async function updateUserService(userId, businessId, data) {
+    const allowedFields = ["name", "email", "role", "branch_id"];
+    const updates = Object.entries(data || {}).filter(([key]) => allowedFields.includes(key));
+
+    if (updates.length === 0) {
+        throw new AppError("No updatable fields provided", 400);
+    }
+
+    if (updates.some(([key]) => key === "email")) {
+        const existingEmail = await query(
+            "SELECT user_id FROM users WHERE email = $1 AND business_id = $2 AND user_id <> $3",
+            [data.email, businessId, userId]
+        );
+
+        if (existingEmail.rowCount > 0) {
+            throw new AppError("Email Already Exists", 409);
+        }
+    }
+
+    const setClauses = updates.map(([key], index) => `${key} = $${index + 1}`).join(", ");
+    const params = updates.map(([, value]) => value);
+    params.push(businessId, userId);
+
+    const result = await query(
+        `UPDATE users SET ${setClauses} WHERE business_id = $${params.length - 1} AND user_id = $${params.length} RETURNING user_id, business_id, name, email, role, branch_id, created_at`,
+        params
+    );
+
+    if (result.rowCount === 0) {
+        throw new NotFoundError("User not found");
+    }
+
+    return result.rows[0];
+}
+
+async function deleteUserService(userId, businessId) {
+    const match = await query("SELECT role FROM users WHERE user_id = $1 AND business_id = $2", [userId, businessId]);
+
+    if (match.rowCount === 0) {
+        throw new NotFoundError("User not found");
+    }
+
+    if (match.rows[0].role === "owner") {
+        throw new AppError("Owner accounts cannot be deleted", 403);
+    }
+
+    const result = await query("DELETE FROM users WHERE user_id = $1 AND business_id = $2 RETURNING user_id", [userId, businessId]);
+
+    if (result.rowCount === 0) {
+        throw new NotFoundError("User not found");
+    }
+
+    return { user_id: userId };
 }
 
 async function registerBusinessOwnerService(data){
@@ -212,4 +268,4 @@ async function listUsersService(businessId) {
 }
 
 
-export {getCurrentUserService,registerUserService,registerBusinessOwnerService,loginUserService,listUsersService }
+export {getCurrentUserService,registerUserService,registerBusinessOwnerService,loginUserService,listUsersService,updateUserService,deleteUserService }

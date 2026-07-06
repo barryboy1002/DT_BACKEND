@@ -74,14 +74,19 @@ async function listSalesService(businessId, options = {}){
 
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
+    const countQuery = `SELECT COUNT(*)::int AS total FROM sales s ${whereSql}`;
+    const countRes = await query(countQuery, params);
+    const totalItems = Number(countRes.rows[0]?.total || 0);
+
     const q = `
       SELECT s.sale_id, s.receipt_number, s.customer_name, s.payment_method, s.date_time,
+             s.is_refund, s.refund_of, s.refund_reason,
              COALESCE(SUM(si.quantity * si.unit_price),0) AS total,
              COUNT(si.sale_item_id) AS items_count
       FROM sales s
       LEFT JOIN sale_items si ON si.sale_id = s.sale_id
       ${whereSql}
-      GROUP BY s.sale_id, s.receipt_number
+      GROUP BY s.sale_id, s.receipt_number, s.is_refund, s.refund_of, s.refund_reason
       ORDER BY s.date_time DESC
       LIMIT $${idx++} OFFSET $${idx++}
     `;
@@ -90,7 +95,12 @@ async function listSalesService(businessId, options = {}){
     const res = await query(q, params);
     return {
       data: res.rows || [],
-      meta: { page, limit }
+      meta: {
+        page,
+        limit,
+        total_items: totalItems,
+        total_pages: Math.max(1, Math.ceil(totalItems / limit))
+      }
     };
 }
 
@@ -119,4 +129,74 @@ async function getSaleService(saleId, businessId, branchId = null){
     return sale;
 }
 
-export { createSaleService, listSalesService, getSaleService };
+async function createRefundService(businessId, saleId, reason = null, branchId = null) {
+    const client = await getClient();
+    try {
+        await client.query('BEGIN');
+
+        const originalSaleRes = await client.query(
+            "SELECT sale_id, customer_name, payment_method, branch_id FROM sales WHERE sale_id = $1 AND business_id = $2",
+            [saleId, businessId]
+        );
+
+        if (originalSaleRes.rowCount === 0) {
+            const err = new Error('Sale not found'); err.status = 404; throw err;
+        }
+
+        const existingRefundRes = await client.query(
+            "SELECT sale_id FROM sales WHERE refund_of = $1 AND business_id = $2",
+            [saleId, businessId]
+        );
+
+        if (existingRefundRes.rowCount > 0) {
+            const err = new Error('This sale has already been refunded'); err.status = 409; throw err;
+        }
+
+        const itemsRes = await client.query(
+            "SELECT product_id, quantity, unit_price FROM sale_items WHERE sale_id = $1",
+            [saleId]
+        );
+
+        if (itemsRes.rowCount === 0) {
+            const err = new Error('Sale has no items to refund'); err.status = 400; throw err;
+        }
+
+        const receiptNumber = `RFD-${Date.now().toString().slice(-8)}`;
+        const refundSaleRes = await client.query(
+            `INSERT INTO sales (business_id, customer_name, payment_method, receipt_number, branch_id, is_refund, refund_of, refund_reason, refunded_at)
+             VALUES ($1, $2, $3, $4, $5, TRUE, $6, $7, NOW())
+             RETURNING sale_id, receipt_number`,
+            [businessId, originalSaleRes.rows[0].customer_name, originalSaleRes.rows[0].payment_method || 'cash', receiptNumber, branchId || originalSaleRes.rows[0].branch_id, saleId, reason]
+        );
+
+        const refundId = refundSaleRes.rows[0].sale_id;
+        const values = [];
+        const params = [];
+
+        itemsRes.rows.forEach((item, index) => {
+            const offset = index * 4;
+            values.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4})`);
+            params.push(refundId, item.product_id, -Number(item.quantity), Number(item.unit_price));
+        });
+
+        await client.query(
+            `INSERT INTO sale_items (sale_id, product_id, quantity, unit_price) VALUES ${values.join(', ')}`,
+            params
+        );
+
+        await client.query('COMMIT');
+        return {
+            sale_id: refundId,
+            receipt_number: refundSaleRes.rows[0].receipt_number,
+            refund_of: saleId,
+            items: itemsRes.rows
+        };
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        if (client && typeof client.release === 'function') client.release();
+    }
+}
+
+export { createSaleService, listSalesService, getSaleService, createRefundService };

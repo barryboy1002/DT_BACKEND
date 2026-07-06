@@ -1,4 +1,4 @@
-import { createSaleService, listSalesService, getSaleService } from "../services/salesServices.js";
+import { createSaleService, listSalesService, getSaleService, createRefundService } from "../services/salesServices.js";
 
 async function createSaleController(req,res,next){
     const {businessId, branchId} = req.user;
@@ -34,4 +34,17 @@ async function getSaleController(req,res,next){
         next(error);
     }
 }
-export {createSaleController, listSalesController, getSaleController}
+
+async function createRefundController(req,res,next){
+    const {businessId, branchId} = req.user;
+    const saleId = Number(req.params?.saleId);
+    const { reason } = req.body || {};
+    try{
+        const refund = await createRefundService(businessId, saleId, reason || null, branchId);
+        res.status(201).json({success:true,data: refund});
+    }catch(error){
+        next(error);
+    }
+}
+
+export {createSaleController, listSalesController, getSaleController, createRefundController}

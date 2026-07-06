@@ -1,4 +1,4 @@
-import { registerUserService,registerBusinessOwnerService,loginUserService ,getCurrentUserService,listUsersService} from "../services/authService.js";
+import { registerUserService,registerBusinessOwnerService,loginUserService ,getCurrentUserService,listUsersService,updateUserService,deleteUserService} from "../services/authService.js";
 
 async function registerBusinessOwnerController(req,res,next){
     try{
@@ -60,6 +60,29 @@ async function listUsersController(req, res, next) {
         next(error);
     }
 }
+
+async function updateUserController(req, res, next) {
+    try {
+        const { businessId } = req.user;
+        const { userId } = req.params;
+        const user = await updateUserService(userId, businessId, req.body);
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function deleteUserController(req, res, next) {
+    try {
+        const { businessId } = req.user;
+        const { userId } = req.params;
+        const deletedUser = await deleteUserService(userId, businessId);
+        res.status(200).json({ success: true, data: deletedUser });
+    } catch (error) {
+        next(error);
+    }
+}
+
 async function loginController(req, res, next) {
     try {
         const { email, password } = req.body;
@@ -90,4 +113,4 @@ async function getCurrentUserController(req, res, next) {
     }
 }
 
-export  {registerUserController,registerBusinessOwnerController,loginController,getCurrentUserController,listUsersController};
+export  {registerUserController,registerBusinessOwnerController,loginController,getCurrentUserController,listUsersController,updateUserController,deleteUserController};
