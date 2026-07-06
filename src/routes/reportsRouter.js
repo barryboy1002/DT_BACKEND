@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from "../middleware/authenticate.js";
 import { salesSummaryController, revenueByPeriodController, transactionsCountController , getProductDistributionController,getSalesTrendController} from "../controllers/reportsController.js";
-import { authenticate } from "../middleware/authenticate.js";
 import { authorize } from "../middleware/authorize.js";
 
 const reportsRouter = Router();
