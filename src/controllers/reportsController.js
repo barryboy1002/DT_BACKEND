@@ -1,31 +1,34 @@
 import { salesSummaryService, revenueByPeriodService, transactionsCountService ,productDistributionService} from "../services/reportsService.js";
 
 async function salesSummaryController(req,res,next){
-  const {businessId} = req.user
+  const {businessId, branchId} = req.user;
+  const activeBranchId = branchId || req.query.branchId || null;
   const from = req.query.from || new Date().toISOString();
   const to = req.query.to || new Date().toISOString();
   try{
-    const data = await salesSummaryService(businessId, from, to);
+    const data = await salesSummaryService(businessId, from, to, activeBranchId);
     res.json({ success:true, data });
   }catch(e){ next(e); }
 }
 
 async function revenueByPeriodController(req,res,next){
-  const {businessId} = req.user
+  const {businessId, branchId} = req.user;
+  const activeBranchId = branchId || req.query.branchId || null;
   const from = req.query.from;
   const to = req.query.to;
   const interval = req.query.interval || 'day';
   try{
-    const data = await revenueByPeriodService(businessId, from, to, interval);
+    const data = await revenueByPeriodService(businessId, from, to, interval, activeBranchId);
     res.json({ success:true, data });
   }catch(e){ next(e); }
 }
 
 async function transactionsCountController(req,res,next){
-  const {businessId} = req.user
+  const {businessId, branchId} = req.user;
+  const activeBranchId = branchId || req.query.branchId || null;
   const date = req.query.date || new Date().toISOString();
   try{
-    const data = await transactionsCountService(businessId, date);
+    const data = await transactionsCountService(businessId, date, activeBranchId);
     res.json({ success:true, data });
   }catch(e){ next(e); }
 }
@@ -36,8 +39,8 @@ async function getProductDistributionController(
     next
 ){
     try{
-        const businessId =
-            req.user.businessId;
+        const { businessId, branchId } = req.user;
+        const activeBranchId = branchId || req.query.branchId || null;
 
         const period =
             req.query.period || "monthly";
@@ -72,7 +75,8 @@ async function getProductDistributionController(
             await productDistributionService(
                 businessId,
                 from,
-                to
+                to,
+                activeBranchId
             );
 
         res.status(200).json({
@@ -91,8 +95,8 @@ async function getSalesTrendController(
     next
 ){
     try{
-        const businessId =
-            req.user.businessId;
+        const { businessId, branchId } = req.user;
+        const activeBranchId = branchId || req.query.branchId || null;
 
         const period =
             req.query.period || "monthly";
@@ -132,7 +136,8 @@ async function getSalesTrendController(
                 businessId,
                 from,
                 to,
-                interval
+                interval,
+                activeBranchId
             );
 
         res.status(200).json({

@@ -15,6 +15,7 @@ import { errorHandler } from "./src/middleware/errHandler.js";
 import { authorize } from './src/middleware/authorize.js';
 import {dashboardRouter } from "./src/routes/dashboardRouter.js";
 import { rateLimiter } from './src/middleware/rateLimiter.js';
+import { branchesRouter } from "./src/routes/branchesRouter.js";
 
 
 
@@ -52,9 +53,9 @@ const allowedOrigins = process.env.FRONTEND_URL ?
     process.env.FRONTEND_URL.split(',') : 
     ['http://localhost:5173'];
 
-//app.use(cors(
-//  {origin : allowedOrigins}
-//));
+app.use(cors(
+  {origin : allowedOrigins}
+));
 
 
 app.use("/auth", authRouter);
@@ -65,6 +66,7 @@ app.use("/stock", stocksRouter);
 app.use("/purchases", purchasesRouter );
 app.use("/suppliers", suppliersRouter);
 app.use("/categories", categoriesRouter);
+app.use("/branches", branchesRouter);
    
 
 // purchases endpoints

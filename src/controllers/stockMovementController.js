@@ -3,10 +3,11 @@ import {getStockMovementsService, getLowStockService,getOutOfStockService} from 
 
 
 async function getStockMovementsController(req,res,next){
-    const {businessId} = req.user
+    const {businessId, branchId} = req.user
     const {limit, offset} = req.query;
+    const activeBranchId = branchId || req.query.branchId || null;
     try{
-        const movements = await getStockMovementsService(businessId, {limit,offset});
+        const movements = await getStockMovementsService(businessId, {limit,offset, branchId: activeBranchId});
         res.status(200).json({ success: true, data: movements });
     }catch(error){
         next(error);
@@ -14,18 +15,20 @@ async function getStockMovementsController(req,res,next){
 }
 
 async function getLowStockController(req,res,next){
-    const {businessId} = req.user
+    const {businessId, branchId} = req.user
+    const activeBranchId = branchId || req.query.branchId || null;
     try{
-        const lowStock  = await getLowStockService(businessId);
+        const lowStock  = await getLowStockService(businessId, activeBranchId);
         res.status(200).json(lowStock);
     }catch(error){
         next(error);
     }
 }
 async function getOutOfStockController(req,res,next){
-    const {businessId} = req.user
+    const {businessId, branchId} = req.user
+    const activeBranchId = branchId || req.query.branchId || null;
     try{
-        const lowStock  = await getOutOfStockService(businessId);
+        const lowStock  = await getOutOfStockService(businessId, activeBranchId);
         res.status(200).json(lowStock);
     }catch(error){
         next(error);

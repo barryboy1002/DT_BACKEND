@@ -1,12 +1,12 @@
 import { query, getClient } from "../db/index.js";
 
-async function createSaleService(businessId, items, paymentMethod, customerName = null) {
+async function createSaleService(businessId, items, paymentMethod, customerName = null, branchId = null) {
     const client = await getClient();
     try {
         const receiptNumber = `RCP-${Date.now().toString().slice(-8)}`;
-        const saleQueryText = "INSERT INTO sales(business_id,customer_name,payment_method,receipt_number) VALUES ($1, $2, $3, $4) RETURNING sale_id, receipt_number";
+        const saleQueryText = "INSERT INTO sales(business_id,customer_name,payment_method,receipt_number,branch_id) VALUES ($1, $2, $3, $4, $5) RETURNING sale_id, receipt_number";
         await client.query('BEGIN');
-        const saleResult = await client.query(saleQueryText, [businessId, customerName, paymentMethod, receiptNumber]);
+        const saleResult = await client.query(saleQueryText, [businessId, customerName, paymentMethod, receiptNumber, branchId]);
         const saleId = saleResult.rows[0].sale_id;
         const savedReceipt = saleResult.rows[0].receipt_number;
 
@@ -42,11 +42,17 @@ async function listSalesService(businessId, options = {}){
     const to = options.to || null;
     const payment_method = options.payment_method || null;
     const search = options.search ? options.search.trim() : null;
+    const branchId = options.branchId || null;
 
     // Build where clauses
     const where = ['s.business_id = $1'];
     const params = [businessId];
     let idx = 2;
+
+    if (branchId) {
+        where.push(`s.branch_id = $${idx++}`);
+        params.push(branchId);
+    }
 
     if (from) {
         where.push(`s.date_time >= $${idx++}`);
@@ -88,9 +94,14 @@ async function listSalesService(businessId, options = {}){
     };
 }
 
-async function getSaleService(saleId, businessId){
-    const qSale = `SELECT sale_id, receipt_number, customer_name, payment_method, date_time FROM sales WHERE sale_id = $1 AND business_id = $2`;
-    const saleRes = await query(qSale, [saleId, businessId]);
+async function getSaleService(saleId, businessId, branchId = null){
+    let qSale = `SELECT sale_id, receipt_number, customer_name, payment_method, date_time FROM sales WHERE sale_id = $1 AND business_id = $2`;
+    const params = [saleId, businessId];
+    if (branchId) {
+        qSale += ` AND branch_id = $3`;
+        params.push(branchId);
+    }
+    const saleRes = await query(qSale, params);
     if (!saleRes || saleRes.rowCount === 0) {
         const err = new Error('Sale not found'); err.status = 404; throw err;
     }

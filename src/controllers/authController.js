@@ -1,4 +1,4 @@
-import { registerUserService,registerBusinessOwnerService,loginUserService ,getCurrentUserService} from "../services/authService.js";
+import { registerUserService,registerBusinessOwnerService,loginUserService ,getCurrentUserService,listUsersService} from "../services/authService.js";
 
 async function registerBusinessOwnerController(req,res,next){
     try{
@@ -16,7 +16,27 @@ async function registerBusinessOwnerController(req,res,next){
 }
 async function registerUserController(req,res,next){
     try{
-        const user = await registerUserService(req.body);
+        const { businessId, role: creatorRole, branchId: creatorBranchId } = req.user;
+        const { name, email, password, role, branchId } = req.body;
+
+        // Managers can only create cashiers at their own branch
+        if (creatorRole === "manager") {
+            if (role !== "cashier") {
+                return res.status(403).json({ success: false, error: "Forbidden: managers can only create cashiers" });
+            }
+            if (branchId !== creatorBranchId) {
+                return res.status(403).json({ success: false, error: "Forbidden: managers can only create cashiers for their own branch" });
+            }
+        }
+
+        const user = await registerUserService({
+            businessId,
+            name,
+            email,
+            password,
+            role,
+            branchId: creatorRole === "manager" ? creatorBranchId : branchId
+        });
 
         res.status(201).json({
             success:true,
@@ -25,6 +45,19 @@ async function registerUserController(req,res,next){
 
     }catch(error){
         next(error)
+    }
+}
+
+async function listUsersController(req, res, next) {
+    try {
+        const { businessId } = req.user;
+        const users = await listUsersService(businessId);
+        res.status(200).json({
+            success: true,
+            data: users
+        });
+    } catch (error) {
+        next(error);
     }
 }
 async function loginController(req, res, next) {
@@ -57,4 +90,4 @@ async function getCurrentUserController(req, res, next) {
     }
 }
 
-export  {registerUserController,registerBusinessOwnerController,loginController,getCurrentUserController};
+export  {registerUserController,registerBusinessOwnerController,loginController,getCurrentUserController,listUsersController};

@@ -5,12 +5,13 @@ let token;
 
 describe("Auth Flow", () => {
 
+    const uniqueEmail = `test-${Date.now()}-${Math.random().toString(36).substring(2, 7)}@example.com`;
     const userData = {
         businessName: "Test Business",
         phone: "0700000000",
         name: "Test Owner",
-        email: "test@example.com",
-        password: "password123",
+        email: uniqueEmail,
+        password: "Password123!",
         plan: "free"
     };
 
@@ -22,7 +23,7 @@ describe("Auth Flow", () => {
 
         expect(res.statusCode).toBe(201);
         expect(res.body.success).toBe(true);
-        expect(res.body.data.email).toBe(userData.email);
+        expect(res.body.data.user.email).toBe(userData.email);
     });
 
     test("Login user", async () => {

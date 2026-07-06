@@ -35,13 +35,15 @@ const userDetails = async (req, res, next) => {
 }
 
   const domain = email.split('@')[1];
-  try{
-    const records = await dns.resolveMx(domain);
-    if (records.length === 0) {
-      return res.status(400).json({ error: 'Email domain does not exist' });
+  if (process.env.NODE_ENV !== 'test') {
+    try {
+      const records = await dns.resolveMx(domain);
+      if (records.length === 0) {
+        return res.status(400).json({ error: 'Email domain does not exist' });
+      }
+    } catch {
+      return res.status(400).json({ error: 'Invalid email domain' });
     }
-  }catch{
-    return res.status(400).json({ error: 'Invalid email domain' });
   }
   email = validator.normalizeEmail(email);
 

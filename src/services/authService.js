@@ -8,7 +8,8 @@ async function registerUserService(data){
         name,
         email,
         password,
-        role} =  data;
+        role,
+        branchId} =  data;
     const existing = await query("SELECT user_id from users WHERE email= $1 AND business_id = $2",[email, businessId])
     if(existing.rowCount > 0){
         throw new AppError("Email Already Exists",409);
@@ -22,20 +23,23 @@ async function registerUserService(data){
         name,
         email,
         password_hash,
-        role)
-        VALUES($1,$2,$3,$4,$5)
+        role,
+        branch_id)
+        VALUES($1,$2,$3,$4,$5,$6)
         RETURNING 
         user_id,
         business_id,
         name,
         email,
-        role`,
+        role,
+        branch_id`,
     [
     businessId,
     name,
     email,
     hashPassword,
-    role
+    role,
+    branchId
     ])
 
     return result.rows[0];
@@ -139,7 +143,7 @@ async function registerBusinessOwnerService(data){
 }
 
 async function loginUserService(email, password){
-    const result = await query("SELECT user_id, business_id, name, email, password_hash, role FROM users WHERE email=$1", [email]);
+    const result = await query("SELECT user_id, business_id, name, email, password_hash, role, branch_id FROM users WHERE email=$1", [email]);
     if(result.rowCount  === 0){
         throw new AppError("Invalid User Credentials", 401)
     }
@@ -154,7 +158,8 @@ async function loginUserService(email, password){
     const token = signToken({
         userId:user.user_id,
         businessId: user.business_id,
-        role:user.role
+        role:user.role,
+        branchId: user.branch_id
     })
     return {
         token,
@@ -163,7 +168,8 @@ async function loginUserService(email, password){
             business_id: user.business_id,
             name: user.name,
             email: user.email,
-            role: user.role
+            role: user.role,
+            branch_id: user.branch_id
         }
     };
 
@@ -178,7 +184,8 @@ async function getCurrentUserService(userId) {
             business_id,
             name,
             email,
-            role
+            role,
+            branch_id
         FROM users
         WHERE user_id = $1
         `,
@@ -192,5 +199,17 @@ async function getCurrentUserService(userId) {
     return result.rows[0];
 }
 
+async function listUsersService(businessId) {
+    const result = await query(
+        `SELECT u.user_id, u.business_id, u.name, u.email, u.role, u.branch_id, b.name AS branch_name, u.created_at
+         FROM users u
+         LEFT JOIN branches b ON u.branch_id = b.branch_id
+         WHERE u.business_id = $1
+         ORDER BY u.created_at DESC`,
+        [businessId]
+    );
+    return result.rows;
+}
 
-export {getCurrentUserService,registerUserService,registerBusinessOwnerService,loginUserService }
+
+export {getCurrentUserService,registerUserService,registerBusinessOwnerService,loginUserService,listUsersService }
