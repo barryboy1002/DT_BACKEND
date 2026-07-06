@@ -41,6 +41,23 @@ describe("Auth Flow", () => {
         token = res.body.data.token;
     });
 
+    test("Owner can update their own profile through the users endpoint", async () => {
+        const meRes = await request(app)
+            .get("/auth/me")
+            .set("Authorization", `Bearer ${token}`);
+
+        expect(meRes.statusCode).toBe(200);
+
+        const res = await request(app)
+            .put(`/auth/users/${meRes.body.data.user_id}`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ name: "Updated Owner" });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.name).toBe("Updated Owner");
+    });
+
     test("Access protected route", async () => {
 
         const res = await request(app)

@@ -1,5 +1,23 @@
 import { query, getClient } from "../db/index.js";
 
+async function getRefundColumnState() {
+    const res = await query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'sales'
+          AND column_name IN ('is_refund', 'refund_of', 'refund_reason', 'refunded_at')
+    `);
+
+    const columns = new Set((res.rows || []).map((row) => row.column_name));
+    return {
+        is_refund: columns.has('is_refund'),
+        refund_of: columns.has('refund_of'),
+        refund_reason: columns.has('refund_reason'),
+        refunded_at: columns.has('refunded_at')
+    };
+}
+
 async function createSaleService(businessId, items, paymentMethod, customerName = null, branchId = null) {
     const client = await getClient();
     try {
@@ -73,20 +91,28 @@ async function listSalesService(businessId, options = {}){
     }
 
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const refundColumns = await getRefundColumnState();
+    const refundFields = [];
+    if (refundColumns.is_refund) refundFields.push('s.is_refund');
+    if (refundColumns.refund_of) refundFields.push('s.refund_of');
+    if (refundColumns.refund_reason) refundFields.push('s.refund_reason');
+
+    const refundSelect = refundFields.length ? `, ${refundFields.join(', ')}` : '';
+    const refundGroupBy = refundFields.length ? `, ${refundFields.join(', ')}` : '';
 
     const countQuery = `SELECT COUNT(*)::int AS total FROM sales s ${whereSql}`;
     const countRes = await query(countQuery, params);
     const totalItems = Number(countRes.rows[0]?.total || 0);
 
     const q = `
-      SELECT s.sale_id, s.receipt_number, s.customer_name, s.payment_method, s.date_time,
-             s.is_refund, s.refund_of, s.refund_reason,
+      SELECT s.sale_id, s.receipt_number, s.customer_name, s.payment_method, s.date_time
+             ${refundSelect},
              COALESCE(SUM(si.quantity * si.unit_price),0) AS total,
              COUNT(si.sale_item_id) AS items_count
       FROM sales s
       LEFT JOIN sale_items si ON si.sale_id = s.sale_id
       ${whereSql}
-      GROUP BY s.sale_id, s.receipt_number, s.is_refund, s.refund_of, s.refund_reason
+      GROUP BY s.sale_id, s.receipt_number${refundGroupBy}
       ORDER BY s.date_time DESC
       LIMIT $${idx++} OFFSET $${idx++}
     `;
@@ -131,6 +157,7 @@ async function getSaleService(saleId, businessId, branchId = null){
 
 async function createRefundService(businessId, saleId, reason = null, branchId = null) {
     const client = await getClient();
+    const refundColumns = await getRefundColumnState();
     try {
         await client.query('BEGIN');
 
@@ -162,11 +189,35 @@ async function createRefundService(businessId, saleId, reason = null, branchId =
         }
 
         const receiptNumber = `RFD-${Date.now().toString().slice(-8)}`;
+        const insertColumns = ['business_id', 'customer_name', 'payment_method', 'receipt_number', 'branch_id'];
+        const valuePlaceholders = ['$1', '$2', '$3', '$4', '$5'];
+        const insertParams = [businessId, originalSaleRes.rows[0].customer_name, originalSaleRes.rows[0].payment_method || 'cash', receiptNumber, branchId || originalSaleRes.rows[0].branch_id];
+
+        let nextParam = insertParams.length + 1;
+        if (refundColumns.is_refund) {
+            insertColumns.push('is_refund');
+            valuePlaceholders.push(`$${nextParam++}`);
+            insertParams.push(true);
+        }
+        if (refundColumns.refund_of) {
+            insertColumns.push('refund_of');
+            valuePlaceholders.push(`$${nextParam++}`);
+            insertParams.push(saleId);
+        }
+        if (refundColumns.refund_reason) {
+            insertColumns.push('refund_reason');
+            valuePlaceholders.push(`$${nextParam++}`);
+            insertParams.push(reason);
+        }
+        if (refundColumns.refunded_at) {
+            insertColumns.push('refunded_at');
+            valuePlaceholders.push(`$${nextParam++}`);
+            insertParams.push(new Date());
+        }
+
         const refundSaleRes = await client.query(
-            `INSERT INTO sales (business_id, customer_name, payment_method, receipt_number, branch_id, is_refund, refund_of, refund_reason, refunded_at)
-             VALUES ($1, $2, $3, $4, $5, TRUE, $6, $7, NOW())
-             RETURNING sale_id, receipt_number`,
-            [businessId, originalSaleRes.rows[0].customer_name, originalSaleRes.rows[0].payment_method || 'cash', receiptNumber, branchId || originalSaleRes.rows[0].branch_id, saleId, reason]
+            `INSERT INTO sales (${insertColumns.join(', ')}) VALUES (${valuePlaceholders.join(', ')}) RETURNING sale_id, receipt_number`,
+            insertParams
         );
 
         const refundId = refundSaleRes.rows[0].sale_id;
