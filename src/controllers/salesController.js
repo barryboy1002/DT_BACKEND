@@ -1,4 +1,4 @@
-import { createSaleService, listSalesService, getSaleService,recentSalesService } from "../services/salesServices.js";
+import { createSaleService, listSalesService, getSaleService } from "../services/salesServices.js";
 
 async function createSaleController(req,res,next){
     const {businessId} = req.user
@@ -32,34 +32,4 @@ async function getSaleController(req,res,next){
         next(error);
     }
 }
-async function getRecentSalesController(
-    req,
-    res,
-    next
-){
-    try{
-        
-        const {businessId} =
-            req.user;
-
-        const limit =
-            Number(req.query.limit) || 10;
-
-        const sales =
-            await recentSalesService(
-                businessId,
-                limit
-            );
-
-        res.status(200).json({
-            success: true,
-            data: sales
-        });
-
-    }catch(error){
-        console.error(error);
-        next(error);
-    }
-}
-
-export {createSaleController, listSalesController, getSaleController, getRecentSalesController}
+export {createSaleController, listSalesController, getSaleController}

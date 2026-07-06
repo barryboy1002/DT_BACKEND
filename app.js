@@ -1,6 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
 import logger from './src/utils/logger.js';
+import cors from 'cors';
 
 import { salesRouter } from "./src/routes/salesRouter.js";
 import { productsRouter } from "./src/routes/productRouter.js";
@@ -50,6 +51,10 @@ app.use(express.json({ limit: '10mb' }));
 const allowedOrigins = process.env.FRONTEND_URL ? 
     process.env.FRONTEND_URL.split(',') : 
     ['http://localhost:5173'];
+
+//app.use(cors(
+//  {origin : allowedOrigins}
+//));
 
 
 app.use("/auth", authRouter);
