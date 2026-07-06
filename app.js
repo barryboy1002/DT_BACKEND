@@ -85,6 +85,7 @@ if (process.env.NODE_ENV !== 'test'){
         logger.info(`Server running on port ${PORT}`, { 
             environment: process.env.NODE_ENV || 'development' 
         });
+        console.log(process.env.NODE_ENV)
     } )
 }
 
