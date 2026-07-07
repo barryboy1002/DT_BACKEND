@@ -63,7 +63,10 @@ async function listUsersController(req, res, next) {
 
 async function updateUserController(req, res, next) {
     try {
-        const { businessId } = req.user;
+        const { businessId, role } = req.user;
+        if (role !== "owner") {
+            return res.status(403).json({ success: false, error: "Forbidden: only owners can manage staff" });
+        }
         const { userId } = req.params;
         const user = await updateUserService(userId, businessId, req.body);
         res.status(200).json({ success: true, data: user });
@@ -74,7 +77,10 @@ async function updateUserController(req, res, next) {
 
 async function deleteUserController(req, res, next) {
     try {
-        const { businessId } = req.user;
+        const { businessId, role } = req.user;
+        if (role !== "owner") {
+            return res.status(403).json({ success: false, error: "Forbidden: only owners can manage staff" });
+        }
         const { userId } = req.params;
         const deletedUser = await deleteUserService(userId, businessId);
         res.status(200).json({ success: true, data: deletedUser });

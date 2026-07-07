@@ -1,5 +1,6 @@
 import request from "supertest";
 import app from "../../app.js"; // IMPORTANT: your express app export
+import { registerUserService } from "../../src/services/authService.js";
 
 let token;
 
@@ -56,6 +57,45 @@ describe("Auth Flow", () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.success).toBe(true);
         expect(res.body.data.name).toBe("Updated Owner");
+    });
+
+    test("Managers cannot promote staff or change another branch", async () => {
+        const managerPayload = {
+            businessName: "Branch Business",
+            phone: "0707777777",
+            name: "Branch Manager",
+            email: `manager-${Date.now()}@example.com`,
+            password: "Password123!",
+            plan: "free"
+        };
+
+        const registered = await request(app)
+            .post("/auth/register")
+            .send(managerPayload);
+
+        expect(registered.statusCode).toBe(201);
+
+        const managerLogin = await request(app)
+            .post("/auth/login")
+            .send({ email: managerPayload.email, password: managerPayload.password });
+
+        expect(managerLogin.statusCode).toBe(200);
+
+        const managerToken = managerLogin.body.data.token;
+
+        const res = await request(app)
+            .post("/auth/createUser")
+            .set("Authorization", `Bearer ${managerToken}`)
+            .send({
+                name: "Other Branch Cashier",
+                email: `cashier-${Date.now()}@example.com`,
+                password: "Password123!",
+                role: "manager",
+                branchId: "00000000-0000-0000-0000-000000000000"
+            });
+
+        expect(res.statusCode).toBe(403);
+        expect(res.body.error).toContain("Forbidden");
     });
 
     test("Access protected route", async () => {

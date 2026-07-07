@@ -91,22 +91,9 @@ async function listSalesService(businessId, options = {}){
     }
 
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
-    const refundColumns = await getRefundColumnState();
-    const refundFields = [];
-    if (refundColumns.is_refund) refundFields.push('s.is_refund');
-    if (refundColumns.refund_of) refundFields.push('s.refund_of');
-    if (refundColumns.refund_reason) refundFields.push('s.refund_reason');
-
-    const refundSelect = refundFields.length ? `, ${refundFields.join(', ')}` : '';
-    const refundGroupBy = refundFields.length ? `, ${refundFields.join(', ')}` : '';
-
-    const countQuery = `SELECT COUNT(*)::int AS total FROM sales s ${whereSql}`;
-    const countRes = await query(countQuery, params);
-    const totalItems = Number(countRes.rows[0]?.total || 0);
-
+   
     const q = `
-      SELECT s.sale_id, s.receipt_number, s.customer_name, s.payment_method, s.date_time
-             ${refundSelect},
+      SELECT s.sale_id, s.receipt_number, s.customer_name, s.payment_method, s.date_time,
              COALESCE(SUM(si.quantity * si.unit_price),0) AS total,
              COUNT(si.sale_item_id) AS items_count
       FROM sales s
@@ -155,99 +142,4 @@ async function getSaleService(saleId, businessId, branchId = null){
     return sale;
 }
 
-async function createRefundService(businessId, saleId, reason = null, branchId = null) {
-    const client = await getClient();
-    const refundColumns = await getRefundColumnState();
-    try {
-        await client.query('BEGIN');
-
-        const originalSaleRes = await client.query(
-            "SELECT sale_id, customer_name, payment_method, branch_id FROM sales WHERE sale_id = $1 AND business_id = $2",
-            [saleId, businessId]
-        );
-
-        if (originalSaleRes.rowCount === 0) {
-            const err = new Error('Sale not found'); err.status = 404; throw err;
-        }
-
-        const existingRefundRes = await client.query(
-            "SELECT sale_id FROM sales WHERE refund_of = $1 AND business_id = $2",
-            [saleId, businessId]
-        );
-
-        if (existingRefundRes.rowCount > 0) {
-            const err = new Error('This sale has already been refunded'); err.status = 409; throw err;
-        }
-
-        const itemsRes = await client.query(
-            "SELECT product_id, quantity, unit_price FROM sale_items WHERE sale_id = $1",
-            [saleId]
-        );
-
-        if (itemsRes.rowCount === 0) {
-            const err = new Error('Sale has no items to refund'); err.status = 400; throw err;
-        }
-
-        const receiptNumber = `RFD-${Date.now().toString().slice(-8)}`;
-        const insertColumns = ['business_id', 'customer_name', 'payment_method', 'receipt_number', 'branch_id'];
-        const valuePlaceholders = ['$1', '$2', '$3', '$4', '$5'];
-        const insertParams = [businessId, originalSaleRes.rows[0].customer_name, originalSaleRes.rows[0].payment_method || 'cash', receiptNumber, branchId || originalSaleRes.rows[0].branch_id];
-
-        let nextParam = insertParams.length + 1;
-        if (refundColumns.is_refund) {
-            insertColumns.push('is_refund');
-            valuePlaceholders.push(`$${nextParam++}`);
-            insertParams.push(true);
-        }
-        if (refundColumns.refund_of) {
-            insertColumns.push('refund_of');
-            valuePlaceholders.push(`$${nextParam++}`);
-            insertParams.push(saleId);
-        }
-        if (refundColumns.refund_reason) {
-            insertColumns.push('refund_reason');
-            valuePlaceholders.push(`$${nextParam++}`);
-            insertParams.push(reason);
-        }
-        if (refundColumns.refunded_at) {
-            insertColumns.push('refunded_at');
-            valuePlaceholders.push(`$${nextParam++}`);
-            insertParams.push(new Date());
-        }
-
-        const refundSaleRes = await client.query(
-            `INSERT INTO sales (${insertColumns.join(', ')}) VALUES (${valuePlaceholders.join(', ')}) RETURNING sale_id, receipt_number`,
-            insertParams
-        );
-
-        const refundId = refundSaleRes.rows[0].sale_id;
-        const values = [];
-        const params = [];
-
-        itemsRes.rows.forEach((item, index) => {
-            const offset = index * 4;
-            values.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4})`);
-            params.push(refundId, item.product_id, -Number(item.quantity), Number(item.unit_price));
-        });
-
-        await client.query(
-            `INSERT INTO sale_items (sale_id, product_id, quantity, unit_price) VALUES ${values.join(', ')}`,
-            params
-        );
-
-        await client.query('COMMIT');
-        return {
-            sale_id: refundId,
-            receipt_number: refundSaleRes.rows[0].receipt_number,
-            refund_of: saleId,
-            items: itemsRes.rows
-        };
-    } catch (error) {
-        await client.query('ROLLBACK');
-        throw error;
-    } finally {
-        if (client && typeof client.release === 'function') client.release();
-    }
-}
-
-export { createSaleService, listSalesService, getSaleService, createRefundService };
+export { createSaleService, listSalesService, getSaleService };

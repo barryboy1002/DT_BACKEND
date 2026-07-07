@@ -11,7 +11,7 @@ authRouter.post("/createUser",authenticate, authorize(["owner", "manager"]), reg
 authRouter.post("/login", loginController);
 
 authRouter.get("/users", authenticate, authorize(["owner", "manager"]), listUsersController);
-authRouter.put("/users/:userId", authenticate, authorize(["owner", "manager"]), updateUserController);
-authRouter.delete("/users/:userId", authenticate, authorize(["owner", "manager"]), deleteUserController);
+authRouter.put("/users/:userId", authenticate, authorize(["owner"]), updateUserController);
+authRouter.delete("/users/:userId", authenticate, authorize(["owner"]), deleteUserController);
 authRouter.get("/me",authenticate,getCurrentUserController);
 export {authRouter}
