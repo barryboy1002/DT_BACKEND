@@ -99,7 +99,7 @@ async function listSalesService(businessId, options = {}){
       FROM sales s
       LEFT JOIN sale_items si ON si.sale_id = s.sale_id
       ${whereSql}
-      GROUP BY s.sale_id, s.receipt_number${refundGroupBy}
+      GROUP BY s.sale_id, s.receipt_number
       ORDER BY s.date_time DESC
       LIMIT $${idx++} OFFSET $${idx++}
     `;
