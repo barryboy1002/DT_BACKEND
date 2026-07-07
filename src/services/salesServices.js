@@ -91,7 +91,11 @@ async function listSalesService(businessId, options = {}){
     }
 
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
-   
+    
+    const countQuery = `SELECT COUNT(*)::int AS total FROM sales s ${whereSql}`;
+    const countRes = await query(countQuery, params);
+    const totalItems = Number(countRes.rows[0]?.total || 0);
+
     const q = `
       SELECT s.sale_id, s.receipt_number, s.customer_name, s.payment_method, s.date_time,
              COALESCE(SUM(si.quantity * si.unit_price),0) AS total,
