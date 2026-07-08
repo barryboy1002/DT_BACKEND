@@ -2,6 +2,7 @@ import express from 'express';
 import helmet from 'helmet';
 import logger from './src/utils/logger.js';
 import cors from 'cors';
+import { mpesaRouter } from "./src/routes/mpesaRouter.js";
 
 import { salesRouter } from "./src/routes/salesRouter.js";
 import { productsRouter } from "./src/routes/productRouter.js";
@@ -53,13 +54,14 @@ const allowedOrigins = process.env.FRONTEND_URL ?
     process.env.FRONTEND_URL.split(',') : 
     ['http://localhost:5173'];
 
-app.use(cors(
-  {origin : allowedOrigins}
-));
+//app.use(cors(
+  //{origin : allowedOrigins}
+//));
 
 
 app.use("/auth", authRouter);
 app.use("/dashboard",  dashboardRouter);
+app.use("/mpesa", mpesaRouter);
 app.use("/sales", salesRouter);
 app.use("/products", productsRouter);
 app.use("/stock", stocksRouter);

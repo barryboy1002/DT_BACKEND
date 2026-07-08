@@ -1,0 +1,11 @@
+Understand the code  first  and follow  the proper practices( do not duplicate my code but do not use to much dependency)
+Todo
+1. implement a clean way to do refunds.
+2. procurements(purchase) and sales modules should be easier to use{
+when I create a product the purchase module should also be ready.
+Instead of text use Icon in the category modal.
+Implement paging in the frontend of the salesHistory page.
+}
+3.RBAC should be set by the manager by default all users should not be able to view reports, staff and branches only
+4. fix the styling of the branches and staff pages(they do not follow style_guide.md)
+5. allow the owner to edit and delete staff
