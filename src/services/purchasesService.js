@@ -2,13 +2,16 @@ import { query, getClient } from "../db/index.js";
 import {NotFoundError} from "../errors/NotFoundError.js"
 
 async function listPurchasesService(businessId, options = {}){
-  const { from, to, supplier_id, page = 1, limit = 20 } = options;
+  const { from, to, supplier_id, page = 1, limit = 20, branchId = null } = options;
   const offset = (page - 1) * limit;
 
   const where = ['p.business_id = $1'];
   const params = [businessId];
   let idx = 2;
 
+  if (branchId) {
+    where.push(`p.branch_id = $${idx++}`); params.push(branchId);
+  }
   if (from) {
     where.push(`p.date_ordered >= $${idx++}`); params.push(from); 
   }
@@ -22,13 +25,13 @@ async function listPurchasesService(businessId, options = {}){
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
   const purchasesQuery = `
-    SELECT p.purchases_id, p.supplier_id, s.name as supplier_name, p.payment_method, p.date_ordered, p.date_arrived,
+    SELECT p.purchases_id, p.supplier_id, s.name as supplier_name, p.payment_method, p.date_ordered, p.date_arrived, p.branch_id,
            COALESCE(SUM(pi.quantity * pi.unit_price),0) AS total, COUNT(pi.purchase_item_id) AS items_count
     FROM purchases p
     LEFT JOIN purchase_items pi ON pi.purchase_id = p.purchases_id
     LEFT JOIN suppliers s ON s.supplier_id = p.supplier_id
     ${whereSql}
-    GROUP BY p.purchases_id, p.supplier_id, s.name, p.payment_method, p.date_ordered, p.date_arrived
+    GROUP BY p.purchases_id, p.supplier_id, s.name, p.payment_method, p.date_ordered, p.date_arrived, p.branch_id
     ORDER BY p.date_ordered DESC
     LIMIT $${idx++} OFFSET $${idx++}
   `;
@@ -38,9 +41,14 @@ async function listPurchasesService(businessId, options = {}){
   return { data: res.rows || [], meta: { page, limit } };
 }
 
-async function getPurchaseService(purchaseId, businessId){
-  const purchaseQuery = `SELECT p.purchases_id, p.supplier_id, s.name as supplier_name, s.phone as supplier_contact, p.payment_method, p.date_ordered, p.date_arrived FROM purchases p LEFT JOIN suppliers s ON s.supplier_id = p.supplier_id WHERE p.purchases_id = $1 AND p.business_id = $2`;
-  const r = await query(purchaseQuery, [purchaseId, businessId]);
+async function getPurchaseService(purchaseId, businessId, branchId = null){
+  let purchaseQuery = `SELECT p.purchases_id, p.supplier_id, s.name as supplier_name, s.phone as supplier_contact, p.payment_method, p.date_ordered, p.date_arrived, p.branch_id FROM purchases p LEFT JOIN suppliers s ON s.supplier_id = p.supplier_id WHERE p.purchases_id = $1 AND p.business_id = $2`;
+  const params = [purchaseId, businessId];
+  if (branchId) {
+    purchaseQuery += ` AND p.branch_id = $3`;
+    params.push(branchId);
+  }
+  const r = await query(purchaseQuery, params);
   if (!r || r.rowCount === 0){ 
     const err = new NotFoundError("purchase Not Found"); 
     throw err;
@@ -53,25 +61,35 @@ async function getPurchaseService(purchaseId, businessId){
 }
 
 async function getPurchasesByProductService(productId, businessId, options = {}){
-  const { page=1, limit=20 } = options;
+  const { page=1, limit=20, branchId = null } = options;
   const offset = (page-1)*limit;
+
+  const where = ['pi.product_id = $1', 'p.business_id = $2'];
+  const params = [productId, businessId];
+  let idx = 3;
+
+  if (branchId) {
+    where.push(`p.branch_id = $${idx++}`); params.push(branchId);
+  }
+
   const productPurchaseQuery = `
-    SELECT p.purchases_id, p.supplier_id, p.date_ordered, pi.quantity, pi.unit_price
+    SELECT p.purchases_id, p.supplier_id, p.date_ordered, p.branch_id, pi.quantity, pi.unit_price
     FROM purchase_items pi
     JOIN purchases p ON p.purchases_id = pi.purchase_id
-    WHERE pi.product_id = $1 AND p.business_id = $2
+    WHERE ${where.join(' AND ')}
     ORDER BY p.date_ordered DESC
-    LIMIT $3 OFFSET $4
+    LIMIT $${idx++} OFFSET $${idx++}
   `;
-  const res = await query(productPurchaseQuery, [productId, businessId, limit, offset]);
+  params.push(limit, offset);
+  const res = await query(productPurchaseQuery, params);
   return { data: res.rows || [], meta: { page, limit } };
 }
 
-async function createPurchaseService(businessId, supplier_id, items, payment_method, date_arrived=null){
+async function createPurchaseService(businessId, supplier_id, items, payment_method, date_arrived=null, branchId=null){
   const client = await getClient();
   try{
     await client.query('BEGIN');
-    const r = await client.query('INSERT INTO purchases (supplier_id, business_id, payment_method, date_arrived) VALUES ($1,$2,$3,$4) RETURNING purchases_id',[supplier_id,businessId,payment_method,date_arrived]);
+    const r = await client.query('INSERT INTO purchases (supplier_id, business_id, payment_method, date_arrived, branch_id) VALUES ($1,$2,$3,$4,$5) RETURNING purchases_id',[supplier_id,businessId,payment_method,date_arrived,branchId]);
     const purchaseId = r.rows[0].purchases_id;
 
     const values = [];

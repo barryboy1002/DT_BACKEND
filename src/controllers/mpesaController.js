@@ -1,4 +1,5 @@
 import { initiateStkPush } from "../services/mpesaService.js";
+import { getDecryptedMpesaCredentials } from "../services/businessesService.js";
 import {
     createPendingTransaction,
     getTransactionById,
@@ -20,6 +21,9 @@ async function initiateMpesaSaleController(req, res, next) {
             return res.status(400).json({ success: false, error: 'phone is required' });
         }
 
+        // Throws a clear AppError if this business hasn't set up M-Pesa yet
+        const credentials = await getDecryptedMpesaCredentials(businessId);
+
         const amount = items.reduce(
             (sum, item) => sum + Number(item.quantity) * Number(item.unit_price),
             0
@@ -28,6 +32,9 @@ async function initiateMpesaSaleController(req, res, next) {
         const activeBranchId = branchId || req.body.branchId || null;
 
         const stkResponse = await initiateStkPush({
+            businessId,
+            credentials,
+            callbackUrl: `${process.env.APP_BASE_URL}/mpesa/callback`,
             phone,
             amount,
             accountRef: `DUKA${Date.now().toString().slice(-8)}`,
@@ -66,7 +73,6 @@ async function initiateMpesaSaleController(req, res, next) {
 }
 
 async function mpesaCallbackController(req, res) {
-    // Acknowledge immediately — Safaricom retries the callback on non-200 responses
     res.status(200).json({ ResultCode: 0, ResultDesc: 'Accepted' });
 
     try {
@@ -85,7 +91,6 @@ async function mpesaCallbackController(req, res) {
                 resultDesc: ResultDesc
             });
         } else if (ResultCode === 1032) {
-            // Customer cancelled / declined the prompt
             await markTransactionCancelled(CheckoutRequestID, ResultDesc);
         } else {
             await markTransactionFailed(CheckoutRequestID, ResultDesc);

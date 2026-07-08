@@ -139,8 +139,16 @@ async function registerBusinessOwnerService(data){
             VALUES($1,$2,$3,$4) RETURNING business_id`,[businessName,plan,phone,businessEmail]
         )
         const businessId = BusinessResult.rows[0].business_id;
-        
-        
+
+        // Every business starts with one branch (their main shop). Owners aren't
+        // locked to it — branch_id stays null for the owner so they see all branches —
+        // but it gives the business somewhere to attach sales/stock/staff from day one.
+        const branchResult = await client.query(
+            `INSERT INTO branches(business_id, name)
+             VALUES($1, $2) RETURNING branch_id, name`,
+            [businessId, `${businessName} - Main Branch`]
+        );
+        const defaultBranch = branchResult.rows[0];
 
         const passwordHash = await bcrypt.hash(password,10);
         const userResult = await client.query(
@@ -185,7 +193,8 @@ async function registerBusinessOwnerService(data){
                 name: user.name,
                 email: user.email,
                 role: user.role
-            }
+            },
+            branch: defaultBranch
         };
     }catch(error){
         await client.query('ROLLBACK');
