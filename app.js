@@ -3,7 +3,7 @@ import helmet from 'helmet';
 import logger from './src/utils/logger.js';
 import cors from 'cors';
 import { mpesaRouter } from "./src/routes/mpesaRouter.js";
-
+import { businessesRouter } from "./src/routes/businessesRouter.js";
 import { salesRouter } from "./src/routes/salesRouter.js";
 import { productsRouter } from "./src/routes/productRouter.js";
 import { stocksRouter } from "./src/routes/stockRouter.js"; 
@@ -70,7 +70,7 @@ app.use("/suppliers", suppliersRouter);
 app.use("/categories", categoriesRouter);
 app.use("/branches", branchesRouter);
    
-
+app.use("/businesses", businessesRouter);
 // purchases endpoints
 app.use("/purchases", purchasesRouter);
 
