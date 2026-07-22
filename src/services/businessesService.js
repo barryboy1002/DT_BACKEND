@@ -21,17 +21,20 @@ async function getMpesaSettingsService(businessId) {
 async function updateMpesaSettingsService(businessId, data) {
     const { mpesa_enabled, mpesa_env, mpesa_shortcode, mpesa_consumer_key, mpesa_consumer_secret, mpesa_passkey } = data;
 
-    if (mpesa_enabled) {
-        const hasExisting = await query(
-            `SELECT (mpesa_consumer_key_enc IS NOT NULL) AS has_key,
-                    (mpesa_consumer_secret_enc IS NOT NULL) AS has_secret,
-                    (mpesa_passkey_enc IS NOT NULL) AS has_passkey
-             FROM businesses WHERE business_id = $1`,
-            [businessId]
-        );
-        const existing = hasExisting.rows[0] || {};
+    const hasExisting = await query(
+        `SELECT mpesa_shortcode,
+                (mpesa_consumer_key_enc IS NOT NULL) AS has_key,
+                (mpesa_consumer_secret_enc IS NOT NULL) AS has_secret,
+                (mpesa_passkey_enc IS NOT NULL) AS has_passkey
+         FROM businesses WHERE business_id = $1`,
+        [businessId]
+    );
+    if (!hasExisting.rowCount) throw new AppError("Business not found", 404);
+    const existing = hasExisting.rows[0];
 
-        if (!mpesa_shortcode) {
+    if (mpesa_enabled) {
+        const effectiveShortcode = mpesa_shortcode || existing.mpesa_shortcode;
+        if (!effectiveShortcode) {
             throw new AppError("Shortcode is required to enable M-Pesa", 400);
         }
         if (!mpesa_consumer_key && !existing.has_key) {
@@ -45,21 +48,25 @@ async function updateMpesaSettingsService(businessId, data) {
         }
     }
 
-    const fields = ['mpesa_enabled = $2', 'mpesa_env = $3', 'mpesa_shortcode = $4', 'mpesa_updated_at = NOW()'];
-    const params = [businessId, Boolean(mpesa_enabled), mpesa_env || 'sandbox', mpesa_shortcode || null];
-    let idx = 5;
+    const fields = ['mpesa_enabled = $2', 'mpesa_env = $3', 'mpesa_updated_at = NOW()'];
+    const params = [businessId, Boolean(mpesa_enabled), mpesa_env || 'sandbox'];
+    let idx = 4;
 
+    if (mpesa_shortcode !== undefined) {
+        fields.push(`mpesa_shortcode = $${idx++}`);
+        params.push(mpesa_shortcode ? mpesa_shortcode.trim() : null);
+    }
     if (mpesa_consumer_key) {
         fields.push(`mpesa_consumer_key_enc = $${idx++}`);
-        params.push(encrypt(mpesa_consumer_key));
+        params.push(encrypt(mpesa_consumer_key.trim()));
     }
     if (mpesa_consumer_secret) {
         fields.push(`mpesa_consumer_secret_enc = $${idx++}`);
-        params.push(encrypt(mpesa_consumer_secret));
+        params.push(encrypt(mpesa_consumer_secret.trim()));
     }
     if (mpesa_passkey) {
         fields.push(`mpesa_passkey_enc = $${idx++}`);
-        params.push(encrypt(mpesa_passkey));
+        params.push(encrypt(mpesa_passkey.trim()));
     }
 
     const res = await query(

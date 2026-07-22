@@ -31,10 +31,12 @@ async function initiateMpesaSaleController(req, res, next) {
 
         const activeBranchId = branchId || req.body.branchId || null;
 
+        const baseUrl = (process.env.APP_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+
         const stkResponse = await initiateStkPush({
             businessId,
             credentials,
-            callbackUrl: `${process.env.APP_BASE_URL}/mpesa/callback`,
+            callbackUrl: `${baseUrl}/mpesa/callback`,
             phone,
             amount,
             accountRef: `DUKA${Date.now().toString().slice(-8)}`,

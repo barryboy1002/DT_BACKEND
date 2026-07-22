@@ -5,7 +5,7 @@ import { getMpesaSettingsController, updateMpesaSettingsController } from '../co
 
 const businessesRouter = Router();
 
-businessesRouter.get('/mpesa-settings', authenticate, authorize(["owner"]), getMpesaSettingsController);
+businessesRouter.get('/mpesa-settings', authenticate, authorize(["owner", "manager", "cashier"]), getMpesaSettingsController);
 businessesRouter.put('/mpesa-settings', authenticate, authorize(["owner"]), updateMpesaSettingsController);
 
 export { businessesRouter };

@@ -3,6 +3,7 @@ import app from "../../app.js"; // IMPORTANT: your express app export
 import { registerUserService } from "../../src/services/authService.js";
 
 let token;
+let branchId;
 
 describe("Auth Flow", () => {
 
@@ -25,6 +26,7 @@ describe("Auth Flow", () => {
         expect(res.statusCode).toBe(201);
         expect(res.body.success).toBe(true);
         expect(res.body.data.user.email).toBe(userData.email);
+        branchId = res.body.data.branch.branch_id;
     });
 
     test("Login user", async () => {
@@ -60,24 +62,23 @@ describe("Auth Flow", () => {
     });
 
     test("Managers cannot promote staff or change another branch", async () => {
-        const managerPayload = {
-            businessName: "Branch Business",
-            phone: "0707777777",
-            name: "Branch Manager",
-            email: `manager-${Date.now()}@example.com`,
-            password: "Password123!",
-            plan: "free"
-        };
+        const managerEmail = `manager-${Date.now()}@example.com`;
+        const createManagerRes = await request(app)
+            .post("/auth/createUser")
+            .set("Authorization", `Bearer ${token}`)
+            .send({
+                name: "Branch Manager",
+                email: managerEmail,
+                password: "Password123!",
+                role: "manager",
+                branchId: branchId
+            });
 
-        const registered = await request(app)
-            .post("/auth/register")
-            .send(managerPayload);
-
-        expect(registered.statusCode).toBe(201);
+        expect(createManagerRes.statusCode).toBe(201);
 
         const managerLogin = await request(app)
             .post("/auth/login")
-            .send({ email: managerPayload.email, password: managerPayload.password });
+            .send({ email: managerEmail, password: "Password123!" });
 
         expect(managerLogin.statusCode).toBe(200);
 
